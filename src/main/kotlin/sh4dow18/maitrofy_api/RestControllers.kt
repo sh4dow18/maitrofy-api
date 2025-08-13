@@ -32,3 +32,16 @@ class GenreRestController(private val genreService: GenreService) {
     @ResponseBody
     fun insertAllFromIGDB() = genreService.insertAllFromIGDB()
 }
+// Platform Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.platforms}")
+@CrossOrigin(origins = ["http://localhost:3000", "http://localhost:3001", "\${ip.domain}"])
+class PlatformRestController(private val platformService: PlatformService) {
+    @GetMapping
+    @ResponseBody
+    fun findAll() = platformService.findAll()
+    @PostMapping("all")
+    @ResponseBody
+    fun insertAllFromIGDB() = platformService.insertAllFromIGDB()
+}

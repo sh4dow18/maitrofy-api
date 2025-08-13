@@ -12,3 +12,8 @@ interface ThemeRepository: JpaRepository<Theme, Long> {
 interface GenreRepository: JpaRepository<Genre, Long> {
     fun findAllByOrderByNameAsc(): List<Genre>
 }
+// Platform Repository
+@Repository
+interface PlatformRepository: JpaRepository<Platform, Long> {
+    fun findAllByOrderByNameAsc(): List<Platform>
+}

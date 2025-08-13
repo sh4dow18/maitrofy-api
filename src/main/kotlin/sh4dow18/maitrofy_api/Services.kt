@@ -106,7 +106,7 @@ class AbstractGenreService(
             val originalName = it["name"] as? String ?: ""
             // If the original name is "", throw a new Error
             if (originalName == "") {
-                throw Exception("Error al obtener el Nombre del Tema con el id '${id}'")
+                throw Exception("Error al obtener el Nombre del Género con el id '${id}'")
             }
             // Translate the original name into Spanish and capitalize the first character.
             val translatedName = translateService.translateText(originalName)?.lowercase()?.replaceFirstChar {
@@ -123,6 +123,61 @@ class AbstractGenreService(
         }
         // Return Genres list as Genres responses list
         return genreMapper.genresListToGenreResponsesList(newGenresList)
+    }
+}
+// Platform Service Interface where the functions to be used in
+// Spring Abstract Platform Service are declared
+interface PlatformService {
+    fun findAll(): List<PlatformResponse>
+    fun insertAllFromIGDB(): List<PlatformResponse>
+}
+// Spring Abstract Platform Service
+@Suppress("unused")
+@Service
+class AbstractPlatformService(
+    // Platform Service Props
+    @Autowired
+    val platformRepository: PlatformRepository,
+    @Autowired
+    val platformMapper: PlatformMapper,
+    @Autowired
+    val igdbService: IGDBService,
+    @Autowired
+    val translateService: TranslateService
+): PlatformService {
+    // Find all Platform and returns them as Platform Responses
+    override fun findAll(): List<PlatformResponse> {
+        return platformMapper.platformsListToPlatformResponsesList(platformRepository.findAllByOrderByNameAsc())
+    }
+    // Insert all Platform from IGDB APi into database
+    override fun insertAllFromIGDB(): List<PlatformResponse> {
+        // Set the Platform query to IGDB API
+        val query = """
+            fields id, name;
+            limit 500;
+        """.trimIndent()
+        // Find all Platforms from IGDB APi
+        val platformFromIGDBList = igdbService.findAllObjects(query, "platforms")
+        // Creates a new Platforms list
+        val newPlatformsList = platformFromIGDBList.map {
+            // Get values from props
+            val id = (it["id"] as Number).toLong()
+            val name = it["name"] as? String ?: ""
+            // If the original name is "", throw a new Error
+            if (name == "") {
+                throw Exception("Error al obtener el Nombre de la Plataforma con el id '${id}'")
+            }
+            // Create a new Platform with the information sent
+            val platform = Platform(
+                id = id,
+                name = name,
+                gamesList = emptySet()
+            )
+            // Save the new Platform
+            platformRepository.save(platform)
+        }
+        // Return Platforms list as Platform responses list
+        return platformMapper.platformsListToPlatformResponsesList(newPlatformsList)
     }
 }
 

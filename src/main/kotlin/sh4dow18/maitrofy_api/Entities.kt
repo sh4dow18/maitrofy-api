@@ -50,7 +50,7 @@ data class Platform(
     @ManyToMany(targetEntity = Game::class)
     @JoinTable(
         name = "platform_game",
-        joinColumns = [JoinColumn(name = "genre_id", referencedColumnName = "id")],
+        joinColumns = [JoinColumn(name = "platform_id", referencedColumnName = "id")],
         inverseJoinColumns = [JoinColumn(name = "game_id", referencedColumnName = "slug")]
     )
     var gamesList: Set<Game>

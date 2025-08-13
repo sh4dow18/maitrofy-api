@@ -22,3 +22,13 @@ interface GenreMapper {
         genresList: List<Genre>
     ): List<GenreResponse>
 }
+// Platform Mapper
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+interface PlatformMapper {
+    fun platformToPlatformResponse(
+        platform: Platform
+    ): PlatformResponse
+    fun platformsListToPlatformResponsesList(
+        platformsList: List<Platform>
+    ): List<PlatformResponse>
+}
