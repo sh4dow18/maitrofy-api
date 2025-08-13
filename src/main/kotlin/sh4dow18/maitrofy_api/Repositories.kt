@@ -7,3 +7,8 @@ import org.springframework.stereotype.Repository
 interface ThemeRepository: JpaRepository<Theme, Long> {
     fun findAllByOrderByNameAsc(): List<Theme>
 }
+// Genre Repository
+@Repository
+interface GenreRepository: JpaRepository<Genre, Long> {
+    fun findAllByOrderByNameAsc(): List<Genre>
+}

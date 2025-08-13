@@ -12,3 +12,13 @@ interface ThemeMapper {
         themesList: List<Theme>
     ): List<ThemeResponse>
 }
+// Genre Mapper
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+interface GenreMapper {
+    fun genreToGenreResponse(
+        genre: Genre
+    ): GenreResponse
+    fun genresListToGenreResponsesList(
+        genresList: List<Genre>
+    ): List<GenreResponse>
+}
