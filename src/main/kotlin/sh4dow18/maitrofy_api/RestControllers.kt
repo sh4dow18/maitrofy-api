@@ -19,3 +19,16 @@ class ThemeRestController(private val themeService: ThemeService) {
     @ResponseBody
     fun insertAllFromIGDB() = themeService.insertAllFromIGDB()
 }
+// Genre Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.genres}")
+@CrossOrigin(origins = ["http://localhost:3000", "http://localhost:3001", "\${ip.domain}"])
+class GenreRestController(private val genreService: GenreService) {
+    @GetMapping
+    @ResponseBody
+    fun findAll() = genreService.findAll()
+    @PostMapping("all")
+    @ResponseBody
+    fun insertAllFromIGDB() = genreService.insertAllFromIGDB()
+}

@@ -27,7 +27,7 @@ class AbstractThemeService(
     @Autowired
     val translateService: TranslateService
 ): ThemeService {
-    // Find all Themes and returns them as Themes Replies
+    // Find all Themes and returns them as Themes Responses
     override fun findAll(): List<ThemeResponse> {
         return themeMapper.themesListToThemeResponsesList(themeRepository.findAllByOrderByNameAsc())
     }
@@ -64,6 +64,65 @@ class AbstractThemeService(
         }
         // Return themes list as themes responses list
         return themeMapper.themesListToThemeResponsesList(newThemesList)
+    }
+}
+// Genre Service Interface where the functions to be used in
+// Spring Abstract Genre Service are declared
+interface GenreService {
+    fun findAll(): List<GenreResponse>
+    fun insertAllFromIGDB(): List<GenreResponse>
+}
+// Spring Abstract Genre Service
+@Suppress("unused")
+@Service
+class AbstractGenreService(
+    // Genre Service Props
+    @Autowired
+    val genreRepository: GenreRepository,
+    @Autowired
+    val genreMapper: GenreMapper,
+    @Autowired
+    val igdbService: IGDBService,
+    @Autowired
+    val translateService: TranslateService
+): GenreService {
+    // Find all Genres and returns them as Genre Responses
+    override fun findAll(): List<GenreResponse> {
+        return genreMapper.genresListToGenreResponsesList(genreRepository.findAllByOrderByNameAsc())
+    }
+    // Insert all Genres from IGDB APi into database
+    override fun insertAllFromIGDB(): List<GenreResponse> {
+        // Set the genre query to IGDB API
+        val query = """
+            fields id, name;
+            limit 500;
+        """.trimIndent()
+        // Find all Genres from IGDB APi
+        val genresFromIGDBList = igdbService.findAllObjects(query, "genres")
+        // Creates a new Genres list
+        val newGenresList = genresFromIGDBList.map {
+            // Get values from props
+            val id = (it["id"] as Number).toLong()
+            val originalName = it["name"] as? String ?: ""
+            // If the original name is "", throw a new Error
+            if (originalName == "") {
+                throw Exception("Error al obtener el Nombre del Tema con el id '${id}'")
+            }
+            // Translate the original name into Spanish and capitalize the first character.
+            val translatedName = translateService.translateText(originalName)?.lowercase()?.replaceFirstChar {
+                    char -> char.uppercase()
+            }
+            // Create a new Genre with the information sent
+            val genre = Genre(
+                id = id,
+                name = translatedName ?: originalName,
+                gamesList = emptySet()
+            )
+            // Save the new Genre
+            genreRepository.save(genre)
+        }
+        // Return Genres list as Genres responses list
+        return genreMapper.genresListToGenreResponsesList(newGenresList)
     }
 }
 
