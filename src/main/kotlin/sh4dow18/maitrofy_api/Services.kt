@@ -28,7 +28,7 @@ class AbstractThemeService(
 ): ThemeService {
     // Find all Themes and returns them as Themes Replies
     override fun findAll(): List<ThemeResponse> {
-        return themeMapper.themesListToThemeResponsesList(themeRepository.findAll())
+        return themeMapper.themesListToThemeResponsesList(themeRepository.findAllByOrderByNameAsc())
     }
     // Insert all themes from IGDB APi into database
     override fun insertAllFromIGDB(): List<ThemeResponse> {
