@@ -14,6 +14,7 @@ interface ThemeService {
     fun insertAllFromIGDB(): List<ThemeResponse>
 }
 // Spring Abstract Theme Service
+@Suppress("unused")
 @Service
 class AbstractThemeService(
     // Theme Service Props
@@ -74,6 +75,7 @@ interface TranslateService {
     fun translateText(text: String): String?
 }
 // Spring Abstract Translate Service
+@Suppress("unused")
 @Service
 class AbstractTranslateService(
     @Autowired
@@ -112,6 +114,7 @@ interface IGDBService {
     fun findAllObjects(query: String, uri: String): List<Map<String, Any>>
 }
 // Spring Abstract IGDB API Service
+@Suppress("unused")
 @Service
 class AbstractIGDBService(
     @Value("\${igdb.clientId}")
