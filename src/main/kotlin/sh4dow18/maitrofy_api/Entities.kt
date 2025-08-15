@@ -1,5 +1,6 @@
 package sh4dow18.maitrofy_api
 // Entities Requirements
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.Id
@@ -14,13 +15,8 @@ data class Theme(
     @Id
     var id: Long,
     var name: String,
-    // Many-to-Many Relationship with Game
-    @ManyToMany(targetEntity = Game::class)
-    @JoinTable(
-        name = "theme_game",
-        joinColumns = [JoinColumn(name = "theme_id", referencedColumnName = "id")],
-        inverseJoinColumns = [JoinColumn(name = "game_id", referencedColumnName = "slug")]
-    )
+    // Many-to-Many Relationship with Theme
+    @ManyToMany(mappedBy = "themesList", fetch = FetchType.LAZY, targetEntity = Game::class)
     var gamesList: Set<Game>
 )
 // Genre Entity
@@ -30,13 +26,8 @@ data class Genre(
     @Id
     var id: Long,
     var name: String,
-    // Many-to-Many Relationship with Game
-    @ManyToMany(targetEntity = Game::class)
-    @JoinTable(
-        name = "genre_game",
-        joinColumns = [JoinColumn(name = "genre_id", referencedColumnName = "id")],
-        inverseJoinColumns = [JoinColumn(name = "game_id", referencedColumnName = "slug")]
-    )
+    // Many-to-Many Relationship with Genre
+    @ManyToMany(mappedBy = "genresList", fetch = FetchType.LAZY, targetEntity = Game::class)
     var gamesList: Set<Game>
 )
 // Platform Entity
@@ -46,13 +37,8 @@ data class Platform(
     @Id
     var id: Long,
     var name: String,
-    // Many-to-Many Relationship with Game
-    @ManyToMany(targetEntity = Game::class)
-    @JoinTable(
-        name = "platform_game",
-        joinColumns = [JoinColumn(name = "platform_id", referencedColumnName = "id")],
-        inverseJoinColumns = [JoinColumn(name = "game_id", referencedColumnName = "slug")]
-    )
+    // Many-to-Many Relationship with Platform
+    @ManyToMany(mappedBy = "platformsList", fetch = FetchType.LAZY, targetEntity = Game::class)
     var gamesList: Set<Game>
 )
 // Game Entity
@@ -62,23 +48,39 @@ data class Game(
     @Id
     var slug: String,
     var name: String,
+    @Column(length = 3000)
     var summary: String,
     var cover: String,
     var background: String,
     var rating: Float,
-    var classification: String,
+    var classification: String?,
     var year: Int,
     var video: String,
-    var collection: String,
+    var collection: String?,
     var developer: String,
     var gameMode: String,
-    // Many-to-Many Relationship with Theme
-    @ManyToMany(mappedBy = "gamesList", fetch = FetchType.LAZY, targetEntity = Theme::class)
+    // Many-to-Many Relationship with Game
+    @ManyToMany(targetEntity = Theme::class)
+    @JoinTable(
+        name = "game_theme",
+        joinColumns = [JoinColumn(name = "game_id", referencedColumnName = "slug")],
+        inverseJoinColumns = [JoinColumn(name = "theme_id", referencedColumnName = "id")]
+    )
     var themesList: Set<Theme>,
-    // Many-to-Many Relationship with Genre
-    @ManyToMany(mappedBy = "gamesList", fetch = FetchType.LAZY, targetEntity = Genre::class)
+    // Many-to-Many Relationship with Game
+    @ManyToMany(targetEntity = Genre::class)
+    @JoinTable(
+        name = "game_genre",
+        joinColumns = [JoinColumn(name = "game_id", referencedColumnName = "slug")],
+        inverseJoinColumns = [JoinColumn(name = "genre_id", referencedColumnName = "id")]
+    )
     var genresList: Set<Genre>,
-    // Many-to-Many Relationship with Platform
-    @ManyToMany(mappedBy = "gamesList", fetch = FetchType.LAZY, targetEntity = Platform::class)
+    // Many-to-Many Relationship with Game
+    @ManyToMany(targetEntity = Platform::class)
+    @JoinTable(
+        name = "game_platform",
+        joinColumns = [JoinColumn(name = "game_id", referencedColumnName = "slug")],
+        inverseJoinColumns = [JoinColumn(name = "platform_id", referencedColumnName = "id")]
+    )
     var platformsList: Set<Platform>
 )

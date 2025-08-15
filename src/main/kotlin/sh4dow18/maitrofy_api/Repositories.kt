@@ -17,3 +17,8 @@ interface GenreRepository: JpaRepository<Genre, Long> {
 interface PlatformRepository: JpaRepository<Platform, Long> {
     fun findAllByOrderByNameAsc(): List<Platform>
 }
+// Game Repository
+@Repository
+interface GameRepository: JpaRepository<Game, String> {
+    fun findTop100ByOrderByRatingDesc(): List<Game>
+}

@@ -32,3 +32,13 @@ interface PlatformMapper {
         platformsList: List<Platform>
     ): List<PlatformResponse>
 }
+// Game Mapper
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+interface GameMapper {
+    fun gameToGameResponse(
+        game: Game
+    ): GameResponse
+    fun gamesListToMinimalGameResponsesList(
+        gamesList: List<Game>
+    ): List<MinimalGameResponse>
+}

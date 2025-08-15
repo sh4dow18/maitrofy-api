@@ -45,3 +45,16 @@ class PlatformRestController(private val platformService: PlatformService) {
     @ResponseBody
     fun insertAllFromIGDB() = platformService.insertAllFromIGDB()
 }
+// Game Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.games}")
+@CrossOrigin(origins = ["http://localhost:3000", "http://localhost:3001", "\${ip.domain}"])
+class GameRestController(private val gameService: GameService) {
+    @GetMapping
+    @ResponseBody
+    fun findTop100() = gameService.findTop100()
+    @PostMapping("all")
+    @ResponseBody
+    fun insertTop5000() = gameService.insertTop5000ByRatingFromIGDB()
+}
