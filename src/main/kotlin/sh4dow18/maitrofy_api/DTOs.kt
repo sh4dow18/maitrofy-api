@@ -27,9 +27,9 @@ data class GameResponse(
     var collection: String,
     var developer: String,
     var gameMode: String,
-    var themes: String?,
-    var genres: String?,
-    var platforms: String?
+    var themes: String,
+    var genres: String,
+    var platforms: String
 )
 
 // Minimal Responses

@@ -2,8 +2,10 @@ package sh4dow18.maitrofy_api
 // Rest Controllers Requirements
 import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 // Theme Rest Controller
@@ -54,6 +56,9 @@ class GameRestController(private val gameService: GameService) {
     @GetMapping
     @ResponseBody
     fun findTop100() = gameService.findTop100()
+    @GetMapping("{id}")
+    @ResponseBody
+    fun findById(@PathVariable("id") id: String) = gameService.findById(id)
     @PostMapping("all")
     @ResponseBody
     fun insertTop5000() = gameService.insertTop5000ByRatingFromIGDB()
