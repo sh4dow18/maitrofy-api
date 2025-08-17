@@ -59,6 +59,9 @@ class GameRestController(private val gameService: GameService) {
     @GetMapping("{id}")
     @ResponseBody
     fun findById(@PathVariable("id") id: String) = gameService.findById(id)
+    @PostMapping("{id}")
+    @ResponseBody
+    fun insert(@PathVariable("id") id: String) = gameService.insert(id)
     @PostMapping("all")
     @ResponseBody
     fun insertTop5000() = gameService.insertTop5000ByRatingFromIGDB()

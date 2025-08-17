@@ -190,6 +190,7 @@ interface GameService {
     fun findTop100(): List<MinimalGameResponse>
     fun findById(id: String): GameResponse
     fun insertTop5000ByRatingFromIGDB(): String
+    fun insert(id: String): GameResponse
 }
 // Spring Abstract Game Service
 @Suppress("unused")
@@ -211,6 +212,9 @@ class AbstractGameService(
     @Autowired
     val translateService: TranslateService
 ): GameService {
+    // Set util maps
+    private val pegiMap = mapOf(1 to "3+", 2 to "7+", 3 to "12+", 4 to "16+", 5 to "18+")
+    private val gameModesMap = mapOf("Single player" to "1 Jugador", "Multiplayer" to "2+ Jugadores")
     // Find top 100 Games and returns them as Game Responses
     override fun findTop100(): List<MinimalGameResponse> {
         return gameMapper.gamesListToMinimalGameResponsesList(gameRepository.findTop100ByOrderByRatingDesc())
@@ -225,9 +229,6 @@ class AbstractGameService(
     }
     // Insert Top 5000 Games by Rating from IGDB APi into database
     override fun insertTop5000ByRatingFromIGDB(): String {
-        // Set util maps
-        val pegiMap = mapOf(1 to "3+", 2 to "7+", 3 to "12+", 4 to "16+", 5 to "18+")
-        val gameModesMap = mapOf("Single player" to "1 Jugador", "Multiplayer" to "2+ Jugadores")
         // Set for total param and limit per request
         val limit = 50
         val total = 5000
@@ -256,49 +257,62 @@ class AbstractGameService(
             // Insert all games in query
             gamesList.map { rawGame ->
                 // Get IGDB Game from Raw JSON Game
-                val game = rawGame.toIgdbGame()
-                // Replace all line breaks to spaces to get only 1 paragraph, also, translate it to spanish
-                val translatedSummary = game.summary?.replace(Regex("\\n+"), " ")?.let {
-                    translateService.translateText(if(it.length > 1997) it.substring(0, 1997) + "..." else it)
-                }
-                // Get PEGI Classification from game (has id "2")
-                val classification = game.ageRatings.find {
-                    (it["category"] as? Number)?.toInt() == 2
-                }?.get("rating") as? Number
-                // Get PEGI Classification as String
-                val classificationStr = classification?.let { pegiMap[it.toInt()] }
-                // Get background from artworks, but if is null, set the best screenshot
-                val background = bestArtwork(game.artworks) ?: bestArtwork(game.screenshots)
-                // Create a new Game
-                val newGame = Game(
-                    slug = game.slug,
-                    name = game.name,
-                    summary = translatedSummary ?: "",
-                    cover = game.coverUrl?.let(::extractFilename) ?: "",
-                    background = background ?: "",
-                    rating = (((game.rating ?: 0f) / 10f) * 10).roundToInt() / 10f,
-                    classification = classificationStr,
-                    year = timestampToYear(game.firstReleaseDate) ?: 0,
-                    video = game.videos.firstOrNull()?.getTyped("video_id") ?: "",
-                    collection = game.collections.firstOrNull()?.getTyped("name"),
-                    developer = game.companies
-                        .firstOrNull { it["developer"] as? Boolean == true }
-                        ?.getTyped<Map<String, Any?>>("company")
-                        ?.getTyped("name")
-                        ?: "",
-                    gameMode = game.gameModes.firstOrNull()
-                        ?.getTyped<String>("name")
-                        ?.let { gameModesMap[it] } ?: "",
-                    themesList = themeRepository.findAllById(game.themes.map { it.toLong() }).toSet(),
-                    genresList = genreRepository.findAllById(game.genres.map { it.toLong() }).toSet(),
-                    platformsList = platformRepository.findAllById(game.platforms.map { it.toLong() }).toSet()
-                )
+                val igdbGame = rawGame.toIgdbGame()
+                // Transform IGDB Game to Game Entity
+                val newGame = igdbGameToGame(igdbGame)
                 // Save new game
                 gameRepository.save(newGame)
                 counter++
             }
         }
         return "Se han guardado un total de $counter juegos"
+    }
+    override fun insert(id: String): GameResponse {
+        // Get IGDB Game by Slug
+        val igdbGame = igdbService.findGameById(id)
+        // Transform IGDB Game to Game Entity
+        val newGame = igdbGameToGame(igdbGame)
+        // Save new game
+        return gameMapper.gameToGameResponse(gameRepository.save(newGame))
+    }
+    // Transform a IGDB Game to Game Entity
+    private fun igdbGameToGame(game: IgdbGameResponse): Game {
+        // Replace all line breaks to spaces to get only 1 paragraph, also, translate it to spanish
+        val translatedSummary = game.summary?.replace(Regex("\\n+"), " ")?.let {
+            translateService.translateText(if(it.length > 1997) it.substring(0, 1997) + "..." else it)
+        }
+        // Get PEGI Classification from game (has id "2")
+        val classification = game.ageRatings.find {
+            (it["category"] as? Number)?.toInt() == 2
+        }?.get("rating") as? Number
+        // Get PEGI Classification as String
+        val classificationStr = classification?.let { pegiMap[it.toInt()] }
+        // Get background from artworks, but if is null, set the best screenshot
+        val background = bestArtwork(game.artworks) ?: bestArtwork(game.screenshots)
+        // Create a new Game
+        return Game(
+            slug = game.slug,
+            name = game.name,
+            summary = translatedSummary ?: "",
+            cover = game.coverUrl?.let(::extractFilename) ?: "",
+            background = background ?: "",
+            rating = (((game.rating ?: 0f) / 10f) * 10).roundToInt() / 10f,
+            classification = classificationStr,
+            year = timestampToYear(game.firstReleaseDate) ?: 0,
+            video = game.videos.firstOrNull()?.getTyped("video_id") ?: "",
+            collection = game.collections.firstOrNull()?.getTyped("name"),
+            developer = game.companies
+                .firstOrNull { it["developer"] as? Boolean == true }
+                ?.getTyped<Map<String, Any?>>("company")
+                ?.getTyped("name")
+                ?: "",
+            gameMode = game.gameModes.firstOrNull()
+                ?.getTyped<String>("name")
+                ?.let { gameModesMap[it] } ?: "",
+            themesList = themeRepository.findAllById(game.themes.map { it.toLong() }).toSet(),
+            genresList = genreRepository.findAllById(game.genres.map { it.toLong() }).toSet(),
+            platformsList = platformRepository.findAllById(game.platforms.map { it.toLong() }).toSet()
+        )
     }
     // Extract File name from URL
     private fun extractFilename(url: String): String {
@@ -397,6 +411,7 @@ class AbstractTranslateService(
 // Spring Abstract IGDB API Service are declared
 interface IGDBService {
     fun findAllObjects(query: String, uri: String): List<Map<String, Any>>
+    fun findGameById(slug: String): IgdbGameResponse
 }
 // Spring Abstract IGDB API Service
 @Suppress("unused")
@@ -429,5 +444,36 @@ class AbstractIGDBService(
             // Lock thread until information is obtained
             // If error or null, set as Empty list
             .block() ?: emptyList()
+    }
+    // Find Game by Id from IGDB API
+    override fun findGameById(slug: String): IgdbGameResponse {
+        // Set the Game query to IGDB API
+        val query = """
+                fields name,summary,cover.url,
+                       artworks.url,artworks.width,artworks.height,artworks.alpha_channel,
+                       screenshots.url,screenshots.width,screenshots.height,
+                       rating,age_ratings.rating,age_ratings.category,
+                       first_release_date,slug,videos.video_id,
+                       genres,platforms,themes,collections.name,
+                       involved_companies.company.name,
+                       involved_companies.developer,
+                       game_modes.name;
+                where slug = "$slug";
+            """.trimIndent()
+        // Get Game Response from IGDB API
+        val response = webClient.post()
+            // Set the endpoint destination
+            .uri("games")
+            // Set thw query as the request body
+            .bodyValue(query)
+            // Send the request
+            .retrieve()
+            // Sets the response to be a generic object
+            .bodyToMono(object : ParameterizedTypeReference<List<Map<String, Any>>>() {})
+            // Lock thread until information is obtained
+            // If error or null, set as Empty list
+            .block() ?: emptyList()
+        // Return Response as IGDB Game
+        return response[0].toIgdbGame()
     }
 }
