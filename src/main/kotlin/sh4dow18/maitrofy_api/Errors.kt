@@ -2,6 +2,8 @@ package sh4dow18.maitrofy_api
 // Error Handlers Requirements
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
@@ -55,6 +57,26 @@ class ErrorsHandler: ResponseEntityExceptionHandler() {
             message = exception.message
         )
         logger.debug("Bad Request: {}", exception)
+        return ResponseEntity(apiError, apiError.status)
+    }
+    @ExceptionHandler(AuthenticationException::class)
+    fun unauthorized(
+        exception: java.lang.Exception,
+    ): ResponseEntity<Any> {
+        val apiError = ApiError(
+            status = HttpStatus.UNAUTHORIZED,
+            message = "No Posee los Privilegios Necesarios para Realizar esta Acción"
+        )
+        return ResponseEntity(apiError, apiError.status)
+    }
+    @ExceptionHandler(AccessDeniedException::class)
+    fun denied(
+        exception: java.lang.Exception,
+    ): ResponseEntity<Any> {
+        val apiError = ApiError(
+            status = HttpStatus.FORBIDDEN,
+            message = "Acceso Denegado"
+        )
         return ResponseEntity(apiError, apiError.status)
     }
     // Default error handler for each exception that does not have a specific error handler

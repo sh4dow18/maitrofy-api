@@ -66,3 +66,8 @@ interface GameRepository: JpaRepository<Game, String> {
 interface UserRepository: JpaRepository<User, Long> {
     fun findByEmail(email: String): Optional<User>
 }
+// Privilege Repository
+@Repository
+interface PrivilegeRepository: JpaRepository<Privilege, String> {
+    fun findAllByOrderBySlugAsc(): List<Privilege>
+}

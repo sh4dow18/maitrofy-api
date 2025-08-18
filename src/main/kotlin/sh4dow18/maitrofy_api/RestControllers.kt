@@ -80,3 +80,15 @@ class GameRestController(private val gameService: GameService) {
     @ResponseBody
     fun insertTop5000() = gameService.insertTop5000ByRatingFromIGDB()
 }
+// Privilege Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.privileges}")
+class PrivilegeRestController(private val privilegeService: PrivilegeService) {
+    @GetMapping
+    @ResponseBody
+    fun findAll() = privilegeService.findAll()
+    @PostMapping("all")
+    @ResponseBody
+    fun insertAllNeeded() = privilegeService.insertAllNeeded()
+}

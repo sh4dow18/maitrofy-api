@@ -6,6 +6,7 @@ import org.mapstruct.ReportingPolicy
 // Mapper Constants
 const val MAP = "stream().map"
 const val LIST_TO_STRING = "collect(java.util.stream.Collectors.joining(\", \"))"
+const val EMPTY_SET = "java(java.util.Collections.emptySet())"
 // Theme Mapper
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 interface ThemeMapper {
@@ -49,4 +50,20 @@ interface GameMapper {
     fun gamesListToMinimalGameResponsesList(
         gamesList: List<Game>
     ): List<MinimalGameResponse>
+}
+// Game Mapper
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+interface PrivilegeMapper {
+    fun privilegeToPrivilegeResponse(
+        privilege: Privilege
+    ): PrivilegeResponse
+    fun privilegeListToPrivilegeResponsesList(
+        privilegesList: List<Privilege>
+    ): List<PrivilegeResponse>
+    @Mapping(target = "slug", expression = "java(newSlug)")
+    @Mapping(target = "rolesList", expression = EMPTY_SET)
+    fun privilegeRequestToPrivilege(
+        newSlug: String,
+        privilegeRequest: PrivilegeRequest
+    ): Privilege
 }

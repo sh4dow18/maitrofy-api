@@ -123,38 +123,34 @@ class JwtAuthorizationFilter(authenticationManager: AuthenticationManager) :
     ) {
         // Returns the JWT of header "Authorization" in HTTP Request
         var authorizationToken = request.getHeader(HttpHeaders.AUTHORIZATION)
-        // Verifies if the token is null to send an Unauthorized error
-        if (authorizationToken == null || !authorizationToken.startsWith(SecurityConstants.TOKEN_PREFIX)) {
-            SecurityContextHolder.clearContext()
-            RestAuthenticationEntryPoint().commence(request, response, null)
-            return
-        }
-        try {
-            // Remove the Token Prefix
-            authorizationToken = authorizationToken.replaceFirst(SecurityConstants.TOKEN_PREFIX.toRegex(), "")
-            // Verifies if it is a valid token
-            // It verifies the token signature key with the Secret Key in Security Constants
-            // Then, extract the username that is the subject of body
-            val userId: String = Jwts.parserBuilder()
-                .setSigningKey(SecurityConstants.SECRET_KEY)
-                .build()
-                .parseClaimsJws(authorizationToken)
-                .body
-                .subject
-            // Registers the username in a local variable for the actual thread
-            LoggedUser.logIn(userId.toLong())
-            // Establishes the Spring Security Context Authentication that is a
-            // "UsernamePasswordAuthenticationToken" with the username extracted of the
-            // JWT Token and an "emptyList" that are the "User" privileges
-            SecurityContextHolder.getContext().authentication =
-                UsernamePasswordAuthenticationToken(userId, null, emptyList())
-        } catch (ex: Exception) {
-            SecurityContextHolder.clearContext()
+        // Verifies if the token is not and starts with the token prefix
+        if (authorizationToken != null && authorizationToken.startsWith(SecurityConstants.TOKEN_PREFIX)) {
+            try {
+                // Remove the Token Prefix
+                authorizationToken = authorizationToken.replaceFirst(SecurityConstants.TOKEN_PREFIX.toRegex(), "")
+                // Verifies if it is a valid token
+                // It verifies the token signature key with the Secret Key in Security Constants
+                // Then, extract the username that is the subject of body
+                val userId: String = Jwts.parserBuilder()
+                    .setSigningKey(SecurityConstants.SECRET_KEY)
+                    .build()
+                    .parseClaimsJws(authorizationToken)
+                    .body
+                    .subject
+                // Registers the username in a local variable for the actual thread
+                LoggedUser.logIn(userId.toLong())
+                // Establishes the Spring Security Context Authentication that is a
+                // "UsernamePasswordAuthenticationToken" with the username extracted of the
+                // JWT Token and an "emptyList" that are the "User" privileges
+                SecurityContextHolder.getContext().authentication =
+                    UsernamePasswordAuthenticationToken(userId, null, emptyList())
+            } catch (ex: Exception) {
+                SecurityContextHolder.clearContext()
+            }
         }
         // This allows the Request to continue with the process for which it was created
         filterChain.doFilter(request, response)
     }
-
 }
 // Logged User Object to control the Actual Thread
 object LoggedUser {

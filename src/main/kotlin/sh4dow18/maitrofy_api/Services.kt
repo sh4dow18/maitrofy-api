@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
+import java.text.Normalizer
 import java.util.Calendar
 import java.util.Date
 import kotlin.math.roundToInt
@@ -410,6 +411,58 @@ class AbstractGameService(
         calendar.time = date
         // Return Year
         return calendar.get(Calendar.YEAR)
+    }
+}
+// Privilege Service Interface where the functions to be used in
+// Spring Abstract Privilege Service are declared
+interface PrivilegeService {
+    fun findAll(): List<PrivilegeResponse>
+    fun insertAllNeeded(): List<PrivilegeResponse>
+}
+// Spring Abstract Privilege Service
+@Suppress("unused")
+@Service
+class AbstractPrivilegeService(
+    // Privilege Service Props
+    @Autowired
+    val privilegeRepository: PrivilegeRepository,
+    @Autowired
+    val privilegeMapper: PrivilegeMapper
+): PrivilegeService {
+    override fun findAll(): List<PrivilegeResponse> {
+        // Return all privileges as Privileges Response ordered by slug
+        return privilegeMapper.privilegeListToPrivilegeResponsesList(privilegeRepository.findAllByOrderBySlugAsc())
+    }
+    override fun insertAllNeeded(): List<PrivilegeResponse> {
+        // Needed Privileges Request List
+        val privilegeRequestList = listOf(
+            PrivilegeRequest("Administrador", "Rol que poseen los usuarios administradores del sistema"),
+            PrivilegeRequest("Jugador", "Rol que poseen los usuarios que usan la plataforma como registro de juegos"),
+        )
+        // Create a new privileges list with privileges request
+        val privilegesList = privilegeRequestList.map {
+            // Create a Slug from name
+            val slug = toSlug(it.name)
+            // Create a new Privilege
+            val newPrivilege = privilegeMapper.privilegeRequestToPrivilege(slug, it)
+            // Save it into database
+            privilegeRepository.save(newPrivilege)
+        }
+        // Return the privileges list as privilege responses list
+        return privilegeMapper.privilegeListToPrivilegeResponsesList(privilegesList)
+    }
+    // Function that allow to transform a text into slug
+    private fun toSlug(text: String): String {
+        // Return String as Slug Form
+        return Normalizer.normalize(text, Normalizer.Form.NFD)
+            // Remove Accents
+            .replace("\\p{M}+".toRegex(), "")
+            // Put in Lowercase
+            .lowercase()
+            // Replace all chars that are not letters or numbers
+            .replace("\\W+".toRegex(), "-")
+            // Remove "-" from start and end
+            .trim('-')
     }
 }
 

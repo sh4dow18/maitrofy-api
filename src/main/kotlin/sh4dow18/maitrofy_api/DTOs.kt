@@ -2,6 +2,13 @@ package sh4dow18.maitrofy_api
 
 // Requests
 
+data class PrivilegeRequest(
+    var name: String,
+    var description: String,
+)
+
+// Special Request
+
 data class LoginRequest(
     var email: String,
     var password: String,
@@ -37,6 +44,11 @@ data class GameResponse(
     var themes: String,
     var genres: String,
     var platforms: String
+)
+data class PrivilegeResponse(
+    var slug: String,
+    var name: String,
+    var description: String,
 )
 
 // Minimal Responses

@@ -1,14 +1,9 @@
 package sh4dow18.maitrofy_api
 // Security Configuration Dependencies
-import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.http.HttpStatus
-import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
@@ -16,57 +11,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer
 import org.springframework.security.config.http.SessionCreationPolicy
-import org.springframework.security.core.AuthenticationException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
-// Class to use it to handle Unauthorized errors
-class RestAuthenticationEntryPoint : AuthenticationEntryPoint {
-    // Creates an "ObjectMapper" that is used to serialize Java to JSON and JSON to Java
-    private val objectMapper: ObjectMapper = ObjectMapper()
-    // Override Unauthorized response
-    override fun commence(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        authException: AuthenticationException?
-    ) {
-        val apiError = ApiError(
-            status = HttpStatus.UNAUTHORIZED,
-            message = "Acceso Denegado"
-        )
-        response.status = HttpServletResponse.SC_UNAUTHORIZED
-        response.contentType = "application/json"
-        response.characterEncoding = "UTF-8"
-        response.writer.write(objectMapper.writeValueAsString(apiError))
-        response.writer.flush()
-    }
-}
-// Class to use it to handle Forbidden errors
-class RestAccessDeniedHandler : AccessDeniedHandler {
-    // Creates an "ObjectMapper" that is used to serialize Java to JSON and JSON to Java
-    private val objectMapper: ObjectMapper = ObjectMapper()
-    // Override Forbidden response
-    override fun handle(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        accessDeniedException: AccessDeniedException?
-    ) {
-        val apiError = ApiError(
-            status = HttpStatus.FORBIDDEN,
-            message = "Acceso Denegado"
-        )
-        response.status = HttpServletResponse.SC_FORBIDDEN
-        response.contentType = "application/json"
-        response.characterEncoding = "UTF-8"
-        response.writer.write(objectMapper.writeValueAsString(apiError))
-        response.writer.flush()
-    }
-}
 @Suppress("unused")
 // Tag that establishes that this configuration would be only for "init" spring profile
 @Profile("init")
@@ -142,10 +92,6 @@ class JwtSecurityConfiguration(private val authenticationConfiguration: Authenti
             // have sessions in the server, this is because the application would use JWT
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            }
-            .exceptionHandling {
-                it.authenticationEntryPoint(RestAuthenticationEntryPoint())
-                it.accessDeniedHandler(RestAccessDeniedHandler())
             }
             // Applies an Additional Custom Security Configurations
             .with(AppCustomDsl(authenticationManager)) {}

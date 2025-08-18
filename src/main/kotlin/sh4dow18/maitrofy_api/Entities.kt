@@ -167,9 +167,9 @@ data class Role(
     @JoinTable(
         name = "role_privilege",
         joinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")],
-        inverseJoinColumns = [JoinColumn(name = "privilege_id", referencedColumnName = "id")]
+        inverseJoinColumns = [JoinColumn(name = "privilege_id", referencedColumnName = "slug")]
     )
-    var privilegesList: MutableSet<Privilege>
+    var privilegesList: Set<Privilege>
 ) {
     override fun equals(other: Any?): Boolean {
         // Check if the current object is the same instance as other
@@ -187,13 +187,12 @@ data class Role(
 @Table(name = "privileges")
 data class Privilege(
     @Id
-    var id: String,
+    var slug: String,
     var name: String,
     var description: String,
-    var enabled: Boolean,
     // Many-to-Many Relationship with Role
     @ManyToMany(mappedBy = "privilegesList", fetch = FetchType.LAZY, targetEntity = Role::class)
-    var rolesList: MutableSet<Role>
+    var rolesList: Set<Role>
 ) {
     override fun equals(other: Any?): Boolean {
         // Check if the current object is the same instance as other
@@ -201,8 +200,8 @@ data class Privilege(
         // Check if other is a Privilege
         if (other !is Privilege) return false
         // Compare the id of this object with the id of the other object
-        return id == other.id
+        return slug == other.slug
     }
     // Use the hashCode of the "id" field as the hash code for the entire object
-    override fun hashCode(): Int = id.hashCode()
+    override fun hashCode(): Int = slug.hashCode()
 }
