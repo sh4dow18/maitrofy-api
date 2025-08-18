@@ -188,6 +188,7 @@ class AbstractPlatformService(
 // Spring Abstract Game Service are declared
 interface GameService {
     fun findTop100(): List<MinimalGameResponse>
+    fun findByName(name: String): List<MinimalGameResponse>
     fun findById(id: String): GameResponse
     fun insertTop5000ByRatingFromIGDB(): String
     fun insert(id: String): GameResponse
@@ -218,6 +219,10 @@ class AbstractGameService(
     // Find top 100 Games and returns them as Game Responses
     override fun findTop100(): List<MinimalGameResponse> {
         return gameMapper.gamesListToMinimalGameResponsesList(gameRepository.findTop100ByOrderByRatingDesc())
+    }
+    // Find Top 100 Games that Contains the same name sent
+    override fun findByName(name: String): List<MinimalGameResponse> {
+        return gameMapper.gamesListToMinimalGameResponsesList(gameRepository.findTop100ByNameContainingIgnoreCase(name))
     }
     override fun findById(id: String): GameResponse {
         // Find Game in Database, if not exists, throw an error

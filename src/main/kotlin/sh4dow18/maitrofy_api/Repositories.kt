@@ -21,4 +21,5 @@ interface PlatformRepository: JpaRepository<Platform, Long> {
 @Repository
 interface GameRepository: JpaRepository<Game, String> {
     fun findTop100ByOrderByRatingDesc(): List<Game>
+    fun findTop100ByNameContainingIgnoreCase(name: String): List<Game>
 }
