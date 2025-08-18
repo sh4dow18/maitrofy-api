@@ -189,6 +189,7 @@ class AbstractPlatformService(
 interface GameService {
     fun findTop100(): List<MinimalGameResponse>
     fun findByName(name: String): List<MinimalGameResponse>
+    fun findRecommendationsById(id: String): List<MinimalGameResponse>
     fun findById(id: String): GameResponse
     fun insertTop5000ByRatingFromIGDB(): String
     fun insert(id: String): GameResponse
@@ -223,6 +224,32 @@ class AbstractGameService(
     // Find Top 100 Games that Contains the same name sent
     override fun findByName(name: String): List<MinimalGameResponse> {
         return gameMapper.gamesListToMinimalGameResponsesList(gameRepository.findTop100ByNameContainingIgnoreCase(name))
+    }
+    override fun findRecommendationsById(id: String): List<MinimalGameResponse> {
+        // Find Game in Database, if not exists, throw an error
+        val game = gameRepository.findById(id).orElseThrow {
+            NoSuchElementExists(id, "Juego")
+        }
+        // Create Recommendations List
+        val recommendationsList: MutableList<Game> = mutableListOf()
+        // If the game has a collection, add the games with the same collection
+        if (game.collection != null) {
+            recommendationsList.addAll(gameRepository.findByCollectionIgnoreCaseAndSlugNot(game.collection!!, game.slug))
+        }
+        // If the game has themes, add the games with the same first theme
+        if (game.genresList.isNotEmpty()) {
+            recommendationsList.addAll(gameRepository.findTop15ByGenre(game.genresList.toList()[0].id, game.slug))
+        }
+        // If the game has genres, add the games with the same first genre
+        if (game.themesList.isNotEmpty()) {
+            recommendationsList.addAll(gameRepository.findTop15ByTheme(game.themesList.toList()[0].id, game.slug))
+        }
+        // Remove duplicate games in recommendations list
+        val distinctRecommendations = recommendationsList.distinctBy { it.slug }
+        // Get Top 15 games
+        val top15Recommendations = distinctRecommendations.take(15)
+        // Return Top 15 Game Recommendations as Game Responses
+        return gameMapper.gamesListToMinimalGameResponsesList(top15Recommendations)
     }
     override fun findById(id: String): GameResponse {
         // Find Game in Database, if not exists, throw an error
