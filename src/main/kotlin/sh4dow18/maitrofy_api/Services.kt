@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import java.util.Calendar
@@ -188,7 +189,7 @@ class AbstractPlatformService(
 // Spring Abstract Game Service are declared
 interface GameService {
     fun findTop100(): List<MinimalGameResponse>
-    fun findByName(name: String): List<MinimalGameResponse>
+    fun findBySearch(name: String?, themeId: Long?, genreId: Long?, platformId: Long?): List<MinimalGameResponse>
     fun findRecommendationsById(id: String): List<MinimalGameResponse>
     fun findById(id: String): GameResponse
     fun insertTop5000ByRatingFromIGDB(): String
@@ -221,9 +222,18 @@ class AbstractGameService(
     override fun findTop100(): List<MinimalGameResponse> {
         return gameMapper.gamesListToMinimalGameResponsesList(gameRepository.findTop100ByOrderByRatingDesc())
     }
-    // Find Top 100 Games that Contains the same name sent
-    override fun findByName(name: String): List<MinimalGameResponse> {
-        return gameMapper.gamesListToMinimalGameResponsesList(gameRepository.findTop100ByNameContainingIgnoreCase(name))
+    // Find Top 100 Games that Contains the information name sent
+    override fun findBySearch(name: String?, themeId: Long?, genreId: Long?, platformId: Long?): List<MinimalGameResponse> {
+        // Get Games list from database
+        val gamesList = if (name == null) {
+            // If name was not sent, find by theme, genre and platform ids
+            gameRepository.findByThemeAndGenreAndPlatform(themeId, genreId, platformId)
+        } else {
+            // If name was sent, find by name and theme, genre and platform ids
+            gameRepository.findByNameAndThemeAndGenreAndPlatform(name, themeId, genreId, platformId)
+        }
+        // Return games list as Minimal Games Responses
+        return gameMapper.gamesListToMinimalGameResponsesList(gamesList.take(100))
     }
     override fun findRecommendationsById(id: String): List<MinimalGameResponse> {
         // Find Game in Database, if not exists, throw an error
@@ -238,11 +248,11 @@ class AbstractGameService(
         }
         // If the game has themes, add the games with the same first theme
         if (game.genresList.isNotEmpty()) {
-            recommendationsList.addAll(gameRepository.findTop15ByGenre(game.genresList.toList()[0].id, game.slug))
+            recommendationsList.addAll(gameRepository.findByTheme(game.genresList.toList()[0].id, game.slug).take(15))
         }
         // If the game has genres, add the games with the same first genre
         if (game.themesList.isNotEmpty()) {
-            recommendationsList.addAll(gameRepository.findTop15ByTheme(game.themesList.toList()[0].id, game.slug))
+            recommendationsList.addAll(gameRepository.findByGenre(game.themesList.toList()[0].id, game.slug).take(15))
         }
         // Remove duplicate games in recommendations list
         val distinctRecommendations = recommendationsList.distinctBy { it.slug }

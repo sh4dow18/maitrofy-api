@@ -56,9 +56,12 @@ class GameRestController(private val gameService: GameService) {
     @GetMapping
     @ResponseBody
     fun findTop100() = gameService.findTop100()
-    @GetMapping("search/{name}")
+    @GetMapping("search")
     @ResponseBody
-    fun findByName(@PathVariable("name") name: String) = gameService.findByName(name)
+    fun findBySearch(
+        @RequestParam("name") name: String?, @RequestParam("themeId") themeId: Long?,
+        @RequestParam("genreId") genreId: Long?, @RequestParam("platformId") platformId: Long?,
+    ) = gameService.findBySearch(name, themeId, genreId, platformId)
     @GetMapping("recommendations/{id}")
     @ResponseBody
     fun findRecommendationsById(@PathVariable("id") id: String) = gameService.findRecommendationsById(id)
