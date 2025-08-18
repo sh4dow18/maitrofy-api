@@ -17,8 +17,7 @@ class ElementAlreadyExists(element: String, existsAs: String) :
 class NoSuchElementExists(element: String, notExistsAs: String) :
     RuntimeException("El Elemento con el id $element no existe como $notExistsAs")
 // "Bad Request" class based on "Runtime Exception" class for use in error handlers with a template message
-class BadRequest(message: String) :
-    RuntimeException(message)
+class BadRequest(message: String) : RuntimeException(message)
 // Error Handlers Main Class
 @ControllerAdvice
 class ErrorsHandler: ResponseEntityExceptionHandler() {

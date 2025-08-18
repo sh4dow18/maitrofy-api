@@ -1,5 +1,12 @@
 package sh4dow18.maitrofy_api
 
+// Requests
+
+data class LoginRequest(
+    var email: String,
+    var password: String,
+)
+
 // Responses
 
 data class ThemeResponse(

@@ -1,12 +1,10 @@
 package sh4dow18.maitrofy_api
 // Repositories Requirements
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import java.awt.print.Pageable
-
+import java.util.Optional
 // Theme Repository
 @Repository
 interface ThemeRepository: JpaRepository<Theme, Long> {
@@ -62,4 +60,9 @@ interface GameRepository: JpaRepository<Game, String> {
     @Query("SELECT g FROM Game g JOIN g.genresList ge WHERE ge.id = :genreId AND g.slug <> :excludeSlug")
     fun findByGenre(@Param("genreId") genreId: Long, @Param("excludeSlug") excludeSlug: String): List<Game>
 
+}
+// User Repository
+@Repository
+interface UserRepository: JpaRepository<User, Long> {
+    fun findByEmail(email: String): Optional<User>
 }
