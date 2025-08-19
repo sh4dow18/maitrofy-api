@@ -17,7 +17,6 @@ import java.text.Normalizer
 import java.util.Calendar
 import java.util.Date
 import kotlin.math.roundToInt
-
 // Theme Service Interface where the functions to be used in
 // Spring Abstract Theme Service are declared
 interface ThemeService {
@@ -436,8 +435,13 @@ class AbstractPrivilegeService(
     override fun insertAllNeeded(): List<PrivilegeResponse> {
         // Needed Privileges Request List
         val privilegeRequestList = listOf(
-            PrivilegeRequest("Administrador", "Rol que poseen los usuarios administradores del sistema"),
-            PrivilegeRequest("Jugador", "Rol que poseen los usuarios que usan la plataforma como registro de juegos"),
+            PrivilegeRequest("Insertar Temas", "Permite insertar temas en el sistema"),
+            PrivilegeRequest("Insertar Géneros", "Permite insertar géneros en el sistema"),
+            PrivilegeRequest("Insertar Plataformas", "Permite insertar plataformas en el sistema"),
+            PrivilegeRequest("Insertar Top Juegos", "Permite insertar top de juegos por Rating"),
+            PrivilegeRequest("Insertar Juego", "Permite insertar un juego"),
+            PrivilegeRequest("Ver Privilegios", "Permite obtener los privilegios del sistema"),
+            PrivilegeRequest("Insertar Privilegios", "Permite insertar privilegios en el sistema"),
         )
         // Create a new privileges list with privileges request
         val privilegesList = privilegeRequestList.map {
