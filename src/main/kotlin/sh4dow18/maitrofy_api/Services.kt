@@ -10,10 +10,12 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
 import java.text.Normalizer
+import java.time.ZonedDateTime
 import java.util.Calendar
 import java.util.Date
 import kotlin.math.roundToInt
@@ -442,6 +444,9 @@ class AbstractPrivilegeService(
             PrivilegeRequest("Insertar Juego", "Permite insertar un juego"),
             PrivilegeRequest("Ver Privilegios", "Permite obtener los privilegios del sistema"),
             PrivilegeRequest("Insertar Privilegios", "Permite insertar privilegios en el sistema"),
+            PrivilegeRequest("Ver Roles", "Permite obtener los roles del sistema"),
+            PrivilegeRequest("Insertar Roles", "Permite insertar roles en el sistema"),
+            PrivilegeRequest("Insertar Administrador Principal", "Permite insertar el usuario administrador principal en el sistema"),
         )
         // Create a new privileges list with privileges request
         val privilegesList = privilegeRequestList.map {
@@ -494,11 +499,18 @@ class AbstractRoleService(
     override fun insertAllNeeded(): List<RoleResponse> {
         // Needed Roles Request List
         val roleRequestsList = listOf(
-            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios")),
+            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal")),
+            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal")),
             RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego"))
         )
         // Create a new Roles list with Role requests
         val rolesList = roleRequestsList.map {
+            // Check if the roles already exists
+            val role = roleRepository.findByNameIgnoringCase(it.name).orElse(null)
+            // If already exists, throw a new error
+            if (role != null) {
+                throw ElementAlreadyExists(it.name, "Rol")
+            }
             // Find the necessary privileges, if someone are not found, throw a new exception
             val privilegesList = it.privilegesList.map { privilegeSlug ->
                 val privilege = privilegeRepository.findById(privilegeSlug).orElseThrow {
@@ -513,6 +525,53 @@ class AbstractRoleService(
         }
         // Return the Roless list as Roles responses list
         return roleMapper.rolesListToRoleResponsesList(rolesList)
+    }
+}
+// User Service Interface where the functions to be used in
+// Spring Abstract User Service are declared
+interface UserService {
+    fun findById(id: Long): UserResponse
+    fun insertMainAdmin(): UserResponse
+}
+// Spring Abstract User Service
+@Suppress("unused")
+@Service
+class AbstractUserService(
+    // User Service Props
+    @Autowired
+    val userRepository: UserRepository,
+    @Autowired
+    val userMapper: UserMapper,
+    @Autowired
+    val roleRepository: RoleRepository,
+    @Value("\${main.user.email}")
+    private val mainUserEmail: String,
+    @Value("\${main.user.password}")
+    private val mainUserPassword: String,
+): UserService {
+    override fun findById(id: Long): UserResponse {
+        // Check if the user already exists, if not, throw a new error
+        val user = userRepository.findById(id).orElseThrow {
+            NoSuchElementExists("$id", "Usuario")
+        }
+        // Return user as User Response
+        return userMapper.userToUserResponse(user)
+    }
+    override fun insertMainAdmin(): UserResponse {
+        // Main User Request
+        val mainUser = UserRequest(mainUserEmail,"Administrador Principal", passwordEncoder(mainUserPassword))
+        // Find the necessary Role, if not found, throw a new exception
+        val role = roleRepository.findByNameIgnoringCase("Administrador Principal").orElseThrow {
+            NoSuchElementExists("Administrador Principal", "Rol")
+        }
+        // Create a new User
+        val newUser = userMapper.userRequestToUser(mainUser, role)
+        // Return the User as User response
+        return userMapper.userToUserResponse(userRepository.save(newUser))
+    }
+    // Encode Passwords
+    private fun passwordEncoder(password: String): String {
+        return BCryptPasswordEncoder().encode(password)
     }
 }
 

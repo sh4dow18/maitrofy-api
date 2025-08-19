@@ -1,5 +1,7 @@
 package sh4dow18.maitrofy_api
 
+import java.time.ZonedDateTime
+
 // Requests
 
 data class PrivilegeRequest(
@@ -10,6 +12,11 @@ data class RoleRequest(
     var name: String,
     var description: String,
     var privilegesList: List<String>
+)
+data class UserRequest(
+    var email: String,
+    var name: String,
+    var password: String,
 )
 
 // Special Request
@@ -60,6 +67,15 @@ data class RoleResponse(
     var name: String,
     var description: String,
     var privilegesList: List<PrivilegeResponse>
+)
+data class UserResponse(
+    var id: Long,
+    var email: String?,
+    var name: String?,
+    var createdDate: String,
+    var enabled: Boolean,
+    var image: Boolean,
+    var role: String,
 )
 
 // Minimal Responses

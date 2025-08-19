@@ -75,4 +75,5 @@ interface PrivilegeRepository: JpaRepository<Privilege, String> {
 @Repository
 interface RoleRepository: JpaRepository<Role, String> {
     fun findAllByOrderByIdAsc(): List<Role>
+    fun findByNameIgnoringCase(name: String): Optional<Role>
 }

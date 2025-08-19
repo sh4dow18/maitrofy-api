@@ -108,3 +108,16 @@ class RoleRestController(private val roleService: RoleService) {
     @ResponseBody
     fun insertAllNeeded() = roleService.insertAllNeeded()
 }
+// Role Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.users}")
+class UserRestController(private val userService: UserService) {
+    @GetMapping("{id}")
+    @ResponseBody
+    fun findById(@PathVariable("id") id: Long) = userService.findById(id)
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("main")
+    @ResponseBody
+    fun insertMainAdmin() = userService.insertMainAdmin()
+}
