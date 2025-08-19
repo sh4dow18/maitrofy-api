@@ -79,11 +79,10 @@ interface RoleMapper {
     fun rolesListToRoleResponsesList(
         rolesList: List<Role>
     ): List<RoleResponse>
-    @Mapping(target = "privilegesList", expression = "java(newPrivilegesList)")
+    @Mapping(target = "privilegesList", expression = EMPTY_SET)
     @Mapping(target = "usersList", expression = EMPTY_LIST)
     fun roleRequestToRole(
-        roleRequest: RoleRequest,
-        newPrivilegesList: Set<Privilege>
+        roleRequest: RoleRequest
     ): Role
 }
 // User Mapper

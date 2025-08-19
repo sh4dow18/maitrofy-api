@@ -505,23 +505,31 @@ class AbstractRoleService(
         )
         // Create a new Roles list with Role requests
         val rolesList = roleRequestsList.map {
-            // Check if the roles already exists
-            val role = roleRepository.findByNameIgnoringCase(it.name).orElse(null)
-            // If already exists, throw a new error
-            if (role != null) {
-                throw ElementAlreadyExists(it.name, "Rol")
-            }
             // Find the necessary privileges, if someone are not found, throw a new exception
             val privilegesList = it.privilegesList.map { privilegeSlug ->
                 val privilege = privilegeRepository.findById(privilegeSlug).orElseThrow {
                     NoSuchElementExists(privilegeSlug, "Privilegio")
                 }
                 privilege
+            }.toSet()
+            // Check if the roles already exists
+            val role = roleRepository.findByNameIgnoringCase(it.name).orElse(null)
+            // If already exists, throw a new error
+            if (role == null) {
+                // Create a new Roles
+                val newRole = roleMapper.roleRequestToRole(it)
+                newRole.privilegesList.addAll(privilegesList)
+                // Save it into database
+                roleRepository.save(newRole)
             }
-            // Create a new Roles
-            val newRole = roleMapper.roleRequestToRole(it, privilegesList.toSet())
-            // Save it into database
-            roleRepository.save(newRole)
+            else {
+                // Update existing role
+                role.name = it.name
+                role.description = it.description
+                role.privilegesList.clear()
+                role.privilegesList.addAll(privilegesList)
+                roleRepository.save(role)
+            }
         }
         // Return the Roless list as Roles responses list
         return roleMapper.rolesListToRoleResponsesList(rolesList)
@@ -715,7 +723,6 @@ class AppUserDetailsService(
     }
     // Function that get the privileges of the user as authorities
     private fun getAuthorities(role: Role): Collection<GrantedAuthority> {
-        return listOf(SimpleGrantedAuthority(role.name)) +
-                role.privilegesList.map { privilege -> SimpleGrantedAuthority(privilege.name) }
+        return role.privilegesList.map { privilege -> SimpleGrantedAuthority(privilege.slug) }
     }
 }

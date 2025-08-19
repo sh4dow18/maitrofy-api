@@ -1,6 +1,6 @@
 package sh4dow18.maitrofy_api
-
-import java.time.ZonedDateTime
+// DTOs Requirements
+import com.fasterxml.jackson.annotation.JsonCreator
 
 // Requests
 
@@ -24,7 +24,11 @@ data class UserRequest(
 data class LoginRequest(
     var email: String,
     var password: String,
-)
+){
+    @JsonCreator
+    @Suppress("unused")
+    constructor() : this("", "")
+}
 
 // Responses
 
