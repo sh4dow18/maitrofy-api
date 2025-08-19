@@ -7,6 +7,7 @@ import org.mapstruct.ReportingPolicy
 const val MAP = "stream().map"
 const val LIST_TO_STRING = "collect(java.util.stream.Collectors.joining(\", \"))"
 const val EMPTY_SET = "java(java.util.Collections.emptySet())"
+const val EMPTY_LIST = "java(java.util.Collections.emptyList())"
 // Theme Mapper
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 interface ThemeMapper {
@@ -51,7 +52,7 @@ interface GameMapper {
         gamesList: List<Game>
     ): List<MinimalGameResponse>
 }
-// Game Mapper
+// Privilege Mapper
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 interface PrivilegeMapper {
     fun privilegeToPrivilegeResponse(
@@ -66,4 +67,20 @@ interface PrivilegeMapper {
         newSlug: String,
         privilegeRequest: PrivilegeRequest
     ): Privilege
+}
+// Role Mapper
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+interface RoleMapper {
+    fun roleToRoleResponse(
+        role: Role
+    ): RoleResponse
+    fun rolesListToRoleResponsesList(
+        rolesList: List<Role>
+    ): List<RoleResponse>
+    @Mapping(target = "privilegesList", expression = "java(newPrivilegesList)")
+    @Mapping(target = "usersList", expression = EMPTY_LIST)
+    fun roleRequestToRole(
+        roleRequest: RoleRequest,
+        newPrivilegesList: Set<Privilege>
+    ): Role
 }

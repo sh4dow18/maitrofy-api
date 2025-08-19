@@ -71,3 +71,8 @@ interface UserRepository: JpaRepository<User, Long> {
 interface PrivilegeRepository: JpaRepository<Privilege, String> {
     fun findAllByOrderBySlugAsc(): List<Privilege>
 }
+// Role Repository
+@Repository
+interface RoleRepository: JpaRepository<Role, String> {
+    fun findAllByOrderByIdAsc(): List<Role>
+}

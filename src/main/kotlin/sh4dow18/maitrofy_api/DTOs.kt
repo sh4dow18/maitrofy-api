@@ -6,6 +6,11 @@ data class PrivilegeRequest(
     var name: String,
     var description: String,
 )
+data class RoleRequest(
+    var name: String,
+    var description: String,
+    var privilegesList: List<String>
+)
 
 // Special Request
 
@@ -49,6 +54,12 @@ data class PrivilegeResponse(
     var slug: String,
     var name: String,
     var description: String,
+)
+data class RoleResponse(
+    var id: Long,
+    var name: String,
+    var description: String,
+    var privilegesList: List<PrivilegeResponse>
 )
 
 // Minimal Responses

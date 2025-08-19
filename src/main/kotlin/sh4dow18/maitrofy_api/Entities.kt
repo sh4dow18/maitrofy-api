@@ -159,6 +159,7 @@ data class Role(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long,
     var name: String,
+    var description: String,
     // One-to-Many Relationship with Users
     @OneToMany(mappedBy = "role", targetEntity = User::class)
     var usersList: List<User>,

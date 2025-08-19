@@ -85,10 +85,26 @@ class GameRestController(private val gameService: GameService) {
 @RestController
 @RequestMapping("\${endpoint.privileges}")
 class PrivilegeRestController(private val privilegeService: PrivilegeService) {
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @ResponseBody
     fun findAll() = privilegeService.findAll()
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("all")
     @ResponseBody
     fun insertAllNeeded() = privilegeService.insertAllNeeded()
+}
+// Role Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.roles}")
+class RoleRestController(private val roleService: RoleService) {
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping
+    @ResponseBody
+    fun findAll() = roleService.findAll()
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("all")
+    @ResponseBody
+    fun insertAllNeeded() = roleService.insertAllNeeded()
 }

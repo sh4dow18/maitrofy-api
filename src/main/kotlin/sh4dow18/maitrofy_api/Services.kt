@@ -469,6 +469,52 @@ class AbstractPrivilegeService(
             .trim('-')
     }
 }
+// Role Service Interface where the functions to be used in
+// Spring Abstract Role Service are declared
+interface RoleService {
+    fun findAll(): List<RoleResponse>
+    fun insertAllNeeded(): List<RoleResponse>
+}
+// Spring Abstract Role Service
+@Suppress("unused")
+@Service
+class AbstractRoleService(
+    // Role Service Props
+    @Autowired
+    val roleRepository: RoleRepository,
+    @Autowired
+    val roleMapper: RoleMapper,
+    @Autowired
+    val privilegeRepository: PrivilegeRepository
+): RoleService {
+    override fun findAll(): List<RoleResponse> {
+        // Return all Roles as Role Responses ordered by slug
+        return roleMapper.rolesListToRoleResponsesList(roleRepository.findAllByOrderByIdAsc())
+    }
+    override fun insertAllNeeded(): List<RoleResponse> {
+        // Needed Roles Request List
+        val roleRequestsList = listOf(
+            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios")),
+            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego"))
+        )
+        // Create a new Roles list with Role requests
+        val rolesList = roleRequestsList.map {
+            // Find the necessary privileges, if someone are not found, throw a new exception
+            val privilegesList = it.privilegesList.map { privilegeSlug ->
+                val privilege = privilegeRepository.findById(privilegeSlug).orElseThrow {
+                    NoSuchElementExists(privilegeSlug, "Privilegio")
+                }
+                privilege
+            }
+            // Create a new Roles
+            val newRole = roleMapper.roleRequestToRole(it, privilegesList.toSet())
+            // Save it into database
+            roleRepository.save(newRole)
+        }
+        // Return the Roless list as Roles responses list
+        return roleMapper.rolesListToRoleResponsesList(rolesList)
+    }
+}
 
 // Utils Services
 
