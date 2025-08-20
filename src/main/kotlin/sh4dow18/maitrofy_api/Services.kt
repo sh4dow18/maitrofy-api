@@ -540,6 +540,7 @@ class AbstractRoleService(
 interface UserService {
     fun findById(id: Long): UserResponse
     fun insertMainAdmin(): UserResponse
+    fun insert(userRequest: UserRequest): UserResponse
 }
 // Spring Abstract User Service
 @Suppress("unused")
@@ -568,12 +569,34 @@ class AbstractUserService(
     override fun insertMainAdmin(): UserResponse {
         // Main User Request
         val mainUser = UserRequest(mainUserEmail,"Administrador Principal", passwordEncoder(mainUserPassword))
+        // Check if already exists the main user
+        val user = userRepository.findByEmail(mainUserEmail).orElse(null)
+        if (user != null) {
+            throw ElementAlreadyExists(mainUserEmail, "Administrador Principal")
+        }
         // Find the necessary Role, if not found, throw a new exception
         val role = roleRepository.findByNameIgnoringCase("Administrador Principal").orElseThrow {
             NoSuchElementExists("Administrador Principal", "Rol")
         }
         // Create a new User
         val newUser = userMapper.userRequestToUser(mainUser, role)
+        // Return the User as User response
+        return userMapper.userToUserResponse(userRepository.save(newUser))
+    }
+    override fun insert(userRequest: UserRequest): UserResponse {
+        // Find the necessary Role, if not found, throw a new exception
+        val role = roleRepository.findByNameIgnoringCase("Jugador").orElseThrow {
+            NoSuchElementExists("Jugador", "Rol")
+        }
+        // Check if the user already exist
+        val user = userRepository.findByEmail(userRequest.email).orElse(null)
+        if (user != null) {
+            throw ElementAlreadyExists(userRequest.email, "Usuario")
+        }
+        // Encrypt Password
+        userRequest.password = passwordEncoder(userRequest.password)
+        // Create a new User
+        val newUser = userMapper.userRequestToUser(userRequest, role)
         // Return the User as User response
         return userMapper.userToUserResponse(userRepository.save(newUser))
     }

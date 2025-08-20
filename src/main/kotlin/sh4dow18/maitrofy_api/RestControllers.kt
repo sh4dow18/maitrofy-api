@@ -4,6 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
@@ -20,7 +21,7 @@ class ThemeRestController(private val themeService: ThemeService) {
     @GetMapping
     @ResponseBody
     fun findAll() = themeService.findAll()
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('insertar-temas')")
     @PostMapping("all")
     @ResponseBody
     fun insertAllFromIGDB() = themeService.insertAllFromIGDB()
@@ -33,7 +34,7 @@ class GenreRestController(private val genreService: GenreService) {
     @GetMapping
     @ResponseBody
     fun findAll() = genreService.findAll()
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('insertar-generos')")
     @PostMapping("all")
     @ResponseBody
     fun insertAllFromIGDB() = genreService.insertAllFromIGDB()
@@ -46,7 +47,7 @@ class PlatformRestController(private val platformService: PlatformService) {
     @GetMapping
     @ResponseBody
     fun findAll() = platformService.findAll()
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('insertar-plataformas')")
     @PostMapping("all")
     @ResponseBody
     fun insertAllFromIGDB() = platformService.insertAllFromIGDB()
@@ -71,11 +72,11 @@ class GameRestController(private val gameService: GameService) {
     @GetMapping("{id}")
     @ResponseBody
     fun findById(@PathVariable("id") id: String) = gameService.findById(id)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('insertar-juego')")
     @PostMapping("{id}")
     @ResponseBody
     fun insert(@PathVariable("id") id: String) = gameService.insert(id)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('insertar-top-juegos')")
     @PostMapping("all")
     @ResponseBody
     fun insertTop5000() = gameService.insertTop5000ByRatingFromIGDB()
@@ -85,11 +86,11 @@ class GameRestController(private val gameService: GameService) {
 @RestController
 @RequestMapping("\${endpoint.privileges}")
 class PrivilegeRestController(private val privilegeService: PrivilegeService) {
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ver-privilegios')")
     @GetMapping
     @ResponseBody
     fun findAll() = privilegeService.findAll()
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('insertar-privilegios')")
     @PostMapping("all")
     @ResponseBody
     fun insertAllNeeded() = privilegeService.insertAllNeeded()
@@ -99,11 +100,11 @@ class PrivilegeRestController(private val privilegeService: PrivilegeService) {
 @RestController
 @RequestMapping("\${endpoint.roles}")
 class RoleRestController(private val roleService: RoleService) {
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ver-roles')")
     @GetMapping
     @ResponseBody
     fun findAll() = roleService.findAll()
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('insertar-roles')")
     @PostMapping("all")
     @ResponseBody
     fun insertAllNeeded() = roleService.insertAllNeeded()
@@ -116,8 +117,11 @@ class UserRestController(private val userService: UserService) {
     @GetMapping("{id}")
     @ResponseBody
     fun findById(@PathVariable("id") id: Long) = userService.findById(id)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('insertar-administrador-principal')")
     @PostMapping("main")
     @ResponseBody
     fun insertMainAdmin() = userService.insertMainAdmin()
+    @PostMapping
+    @ResponseBody
+    fun insert(@RequestBody userRequest: UserRequest) = userService.insert(userRequest)
 }

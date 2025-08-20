@@ -13,6 +13,7 @@ import org.springframework.security.authentication.AuthenticationServiceExceptio
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter
@@ -84,8 +85,10 @@ class JwtAuthenticationFilter(authenticationManager: AuthenticationManager) : Us
     ) {
         // Creates an "ObjectMapper" that is used to serialize Java to JSON and JSON to Java
         val objectMapper = ObjectMapper()
-        // Get the user id from database
-        val userId = (authentication.principal as org.springframework.security.core.userdetails.User).username
+        // Get the user id and authorities from database
+        val user = authentication.principal as org.springframework.security.core.userdetails.User
+        val userId = user.username
+        val authorities = user.authorities.map { it.authority }
         // Creates the JWT
         val token = Jwts.builder()
             .signWith(SecurityConstants.SECRET_KEY)
@@ -93,6 +96,7 @@ class JwtAuthenticationFilter(authenticationManager: AuthenticationManager) : Us
             .setIssuer(SecurityConstants.TOKEN_ISSUER)
             .setAudience(SecurityConstants.TOKEN_AUDIENCE)
             .setSubject(userId)
+            .claim("authorities", authorities)
             .setExpiration(Date(System.currentTimeMillis() + SecurityConstants.TOKEN_LIFETIME))
             // Compact the JWT in a string
             .compact()
@@ -130,20 +134,24 @@ class JwtAuthorizationFilter(authenticationManager: AuthenticationManager) :
                 authorizationToken = authorizationToken.replaceFirst(SecurityConstants.TOKEN_PREFIX.toRegex(), "")
                 // Verifies if it is a valid token
                 // It verifies the token signature key with the Secret Key in Security Constants
-                // Then, extract the username that is the subject of body
-                val userId: String = Jwts.parserBuilder()
+                val claims = Jwts.parserBuilder()
                     .setSigningKey(SecurityConstants.SECRET_KEY)
                     .build()
                     .parseClaimsJws(authorizationToken)
                     .body
-                    .subject
+                // Then, extract the user id that is the subject of body
+                val userId: String = claims.subject
+                // Get authorities from token from claims
+                val authorities = (claims["authorities"] as List<*>).map {
+                    SimpleGrantedAuthority(it.toString())
+                }
                 // Registers the username in a local variable for the actual thread
                 LoggedUser.logIn(userId.toLong())
                 // Establishes the Spring Security Context Authentication that is a
                 // "UsernamePasswordAuthenticationToken" with the username extracted of the
                 // JWT Token and an "emptyList" that are the "User" privileges
                 SecurityContextHolder.getContext().authentication =
-                    UsernamePasswordAuthenticationToken(userId, null, emptyList())
+                    UsernamePasswordAuthenticationToken(userId, null, authorities)
             } catch (ex: Exception) {
                 SecurityContextHolder.clearContext()
             }
