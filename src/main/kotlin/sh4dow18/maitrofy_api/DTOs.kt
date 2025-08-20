@@ -1,4 +1,34 @@
 package sh4dow18.maitrofy_api
+// DTOs Requirements
+import com.fasterxml.jackson.annotation.JsonCreator
+
+// Requests
+
+data class PrivilegeRequest(
+    var name: String,
+    var description: String,
+)
+data class RoleRequest(
+    var name: String,
+    var description: String,
+    var privilegesList: List<String>
+)
+data class UserRequest(
+    var email: String,
+    var name: String,
+    var password: String,
+)
+
+// Special Request
+
+data class LoginRequest(
+    var email: String,
+    var password: String,
+){
+    @JsonCreator
+    @Suppress("unused")
+    constructor() : this("", "")
+}
 
 // Responses
 
@@ -30,6 +60,26 @@ data class GameResponse(
     var themes: String,
     var genres: String,
     var platforms: String
+)
+data class PrivilegeResponse(
+    var slug: String,
+    var name: String,
+    var description: String,
+)
+data class RoleResponse(
+    var id: Long,
+    var name: String,
+    var description: String,
+    var privilegesList: List<PrivilegeResponse>
+)
+data class UserResponse(
+    var id: Long,
+    var email: String?,
+    var name: String?,
+    var createdDate: String,
+    var enabled: Boolean,
+    var image: Boolean,
+    var role: String,
 )
 
 // Minimal Responses

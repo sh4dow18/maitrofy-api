@@ -5,13 +5,20 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
-import org.springframework.data.domain.PageRequest
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
+import java.text.Normalizer
+import java.time.ZonedDateTime
 import java.util.Calendar
 import java.util.Date
 import kotlin.math.roundToInt
-
 // Theme Service Interface where the functions to be used in
 // Spring Abstract Theme Service are declared
 interface ThemeService {
@@ -407,6 +414,197 @@ class AbstractGameService(
         return calendar.get(Calendar.YEAR)
     }
 }
+// Privilege Service Interface where the functions to be used in
+// Spring Abstract Privilege Service are declared
+interface PrivilegeService {
+    fun findAll(): List<PrivilegeResponse>
+    fun insertAllNeeded(): List<PrivilegeResponse>
+}
+// Spring Abstract Privilege Service
+@Suppress("unused")
+@Service
+class AbstractPrivilegeService(
+    // Privilege Service Props
+    @Autowired
+    val privilegeRepository: PrivilegeRepository,
+    @Autowired
+    val privilegeMapper: PrivilegeMapper
+): PrivilegeService {
+    override fun findAll(): List<PrivilegeResponse> {
+        // Return all privileges as Privileges Response ordered by slug
+        return privilegeMapper.privilegeListToPrivilegeResponsesList(privilegeRepository.findAllByOrderBySlugAsc())
+    }
+    override fun insertAllNeeded(): List<PrivilegeResponse> {
+        // Needed Privileges Request List
+        val privilegeRequestList = listOf(
+            PrivilegeRequest("Insertar Temas", "Permite insertar temas en el sistema"),
+            PrivilegeRequest("Insertar Géneros", "Permite insertar géneros en el sistema"),
+            PrivilegeRequest("Insertar Plataformas", "Permite insertar plataformas en el sistema"),
+            PrivilegeRequest("Insertar Top Juegos", "Permite insertar top de juegos por Rating"),
+            PrivilegeRequest("Insertar Juego", "Permite insertar un juego"),
+            PrivilegeRequest("Ver Privilegios", "Permite obtener los privilegios del sistema"),
+            PrivilegeRequest("Insertar Privilegios", "Permite insertar privilegios en el sistema"),
+            PrivilegeRequest("Ver Roles", "Permite obtener los roles del sistema"),
+            PrivilegeRequest("Insertar Roles", "Permite insertar roles en el sistema"),
+            PrivilegeRequest("Insertar Administrador Principal", "Permite insertar el usuario administrador principal en el sistema"),
+        )
+        // Create a new privileges list with privileges request
+        val privilegesList = privilegeRequestList.map {
+            // Create a Slug from name
+            val slug = toSlug(it.name)
+            // Create a new Privilege
+            val newPrivilege = privilegeMapper.privilegeRequestToPrivilege(slug, it)
+            // Save it into database
+            privilegeRepository.save(newPrivilege)
+        }
+        // Return the privileges list as privilege responses list
+        return privilegeMapper.privilegeListToPrivilegeResponsesList(privilegesList)
+    }
+    // Function that allow to transform a text into slug
+    private fun toSlug(text: String): String {
+        // Return String as Slug Form
+        return Normalizer.normalize(text, Normalizer.Form.NFD)
+            // Remove Accents
+            .replace("\\p{M}+".toRegex(), "")
+            // Put in Lowercase
+            .lowercase()
+            // Replace all chars that are not letters or numbers
+            .replace("\\W+".toRegex(), "-")
+            // Remove "-" from start and end
+            .trim('-')
+    }
+}
+// Role Service Interface where the functions to be used in
+// Spring Abstract Role Service are declared
+interface RoleService {
+    fun findAll(): List<RoleResponse>
+    fun insertAllNeeded(): List<RoleResponse>
+}
+// Spring Abstract Role Service
+@Suppress("unused")
+@Service
+class AbstractRoleService(
+    // Role Service Props
+    @Autowired
+    val roleRepository: RoleRepository,
+    @Autowired
+    val roleMapper: RoleMapper,
+    @Autowired
+    val privilegeRepository: PrivilegeRepository
+): RoleService {
+    override fun findAll(): List<RoleResponse> {
+        // Return all Roles as Role Responses ordered by slug
+        return roleMapper.rolesListToRoleResponsesList(roleRepository.findAllByOrderByIdAsc())
+    }
+    override fun insertAllNeeded(): List<RoleResponse> {
+        // Needed Roles Request List
+        val roleRequestsList = listOf(
+            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal")),
+            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal")),
+            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego"))
+        )
+        // Create a new Roles list with Role requests
+        val rolesList = roleRequestsList.map {
+            // Find the necessary privileges, if someone are not found, throw a new exception
+            val privilegesList = it.privilegesList.map { privilegeSlug ->
+                val privilege = privilegeRepository.findById(privilegeSlug).orElseThrow {
+                    NoSuchElementExists(privilegeSlug, "Privilegio")
+                }
+                privilege
+            }.toSet()
+            // Check if the roles already exists
+            val role = roleRepository.findByNameIgnoringCase(it.name).orElse(null)
+            // If already exists, throw a new error
+            if (role == null) {
+                // Create a new Roles
+                val newRole = roleMapper.roleRequestToRole(it)
+                newRole.privilegesList.addAll(privilegesList)
+                // Save it into database
+                roleRepository.save(newRole)
+            }
+            else {
+                // Update existing role
+                role.name = it.name
+                role.description = it.description
+                role.privilegesList.clear()
+                role.privilegesList.addAll(privilegesList)
+                roleRepository.save(role)
+            }
+        }
+        // Return the Roless list as Roles responses list
+        return roleMapper.rolesListToRoleResponsesList(rolesList)
+    }
+}
+// User Service Interface where the functions to be used in
+// Spring Abstract User Service are declared
+interface UserService {
+    fun findById(id: Long): UserResponse
+    fun insertMainAdmin(): UserResponse
+    fun insert(userRequest: UserRequest): UserResponse
+}
+// Spring Abstract User Service
+@Suppress("unused")
+@Service
+class AbstractUserService(
+    // User Service Props
+    @Autowired
+    val userRepository: UserRepository,
+    @Autowired
+    val userMapper: UserMapper,
+    @Autowired
+    val roleRepository: RoleRepository,
+    @Value("\${main.user.email}")
+    private val mainUserEmail: String,
+    @Value("\${main.user.password}")
+    private val mainUserPassword: String,
+): UserService {
+    override fun findById(id: Long): UserResponse {
+        // Check if the user already exists, if not, throw a new error
+        val user = userRepository.findById(id).orElseThrow {
+            NoSuchElementExists("$id", "Usuario")
+        }
+        // Return user as User Response
+        return userMapper.userToUserResponse(user)
+    }
+    override fun insertMainAdmin(): UserResponse {
+        // Main User Request
+        val mainUser = UserRequest(mainUserEmail,"Administrador Principal", passwordEncoder(mainUserPassword))
+        // Check if already exists the main user
+        val user = userRepository.findByEmail(mainUserEmail).orElse(null)
+        if (user != null) {
+            throw ElementAlreadyExists(mainUserEmail, "Administrador Principal")
+        }
+        // Find the necessary Role, if not found, throw a new exception
+        val role = roleRepository.findByNameIgnoringCase("Administrador Principal").orElseThrow {
+            NoSuchElementExists("Administrador Principal", "Rol")
+        }
+        // Create a new User
+        val newUser = userMapper.userRequestToUser(mainUser, role)
+        // Return the User as User response
+        return userMapper.userToUserResponse(userRepository.save(newUser))
+    }
+    override fun insert(userRequest: UserRequest): UserResponse {
+        // Find the necessary Role, if not found, throw a new exception
+        val role = roleRepository.findByNameIgnoringCase("Jugador").orElseThrow {
+            NoSuchElementExists("Jugador", "Rol")
+        }
+        // Check if the user already exist
+        val user = userRepository.findByEmail(userRequest.email).orElse(null)
+        if (user != null) {
+            throw ElementAlreadyExists(userRequest.email, "Usuario")
+        }
+        // Encrypt Password
+        userRequest.password = passwordEncoder(userRequest.password)
+        // Create a new User
+        val newUser = userMapper.userRequestToUser(userRequest, role)
+        // Return the User as User response
+        return userMapper.userToUserResponse(userRepository.save(newUser))
+    }
+    // Encode Passwords
+    private fun passwordEncoder(password: String): String {
+        return BCryptPasswordEncoder().encode(password)
+    }
+}
 
 // Utils Services
 
@@ -487,7 +685,7 @@ class AbstractIGDBService(
             // If error or null, set as Empty list
             .block() ?: emptyList()
     }
-    // Find Game by Id from IGDB API
+    // Find Game by id from IGDB API
     override fun findGameById(slug: String): IgdbGameResponse {
         // Set the Game query to IGDB API
         val query = """
@@ -517,5 +715,37 @@ class AbstractIGDBService(
             .block() ?: emptyList()
         // Return Response as IGDB Game
         return response[0].toIgdbGame()
+    }
+}
+@Suppress("unused")
+// AppUserDetailsService Service Class
+// Spring Abstract App User Details Service
+@Service
+// Tag that establishes that is a Transactional Service. This one makes a transaction when
+// this service is in operation.
+@Transactional
+class AppUserDetailsService(
+    // App User Detail sService Props
+    @Autowired
+    val userRepository: UserRepository,
+) : UserDetailsService {
+    // Tag that allows to throw a Username Not Found Exception
+    @Throws(UsernameNotFoundException::class)
+    // Function that is used to the user details during the authentication
+    override fun loadUserByUsername(email: String): UserDetails {
+        val user: User = userRepository.findByEmail(email).orElse(null)
+            ?: return org.springframework.security.core.userdetails.User(
+                "Error", "Error", false, false, false,
+                false, emptyList()
+            )
+        // Returns a Spring Security "User" with the "User" information found
+        return org.springframework.security.core.userdetails.User(
+            user.id.toString(), user.password, user.enabled, true, true,
+            true, getAuthorities(user.role)
+        )
+    }
+    // Function that get the privileges of the user as authorities
+    private fun getAuthorities(role: Role): Collection<GrantedAuthority> {
+        return role.privilegesList.map { privilege -> SimpleGrantedAuthority(privilege.slug) }
     }
 }

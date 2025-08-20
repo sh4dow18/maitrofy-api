@@ -1,22 +1,27 @@
 package sh4dow18.maitrofy_api
 // Rest Controllers Requirements
-import org.springframework.web.bind.annotation.CrossOrigin
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
+/*
+* Important Tags
+* - PreAuthorize tag is used to check if the request has a JWT
+* */
 // Theme Rest Controller
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.themes}")
-@CrossOrigin(origins = ["http://localhost:3000", "http://localhost:3001", "\${ip.domain}"])
 class ThemeRestController(private val themeService: ThemeService) {
     @GetMapping
     @ResponseBody
     fun findAll() = themeService.findAll()
+    @PreAuthorize("hasAuthority('insertar-temas')")
     @PostMapping("all")
     @ResponseBody
     fun insertAllFromIGDB() = themeService.insertAllFromIGDB()
@@ -25,11 +30,11 @@ class ThemeRestController(private val themeService: ThemeService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.genres}")
-@CrossOrigin(origins = ["http://localhost:3000", "http://localhost:3001", "\${ip.domain}"])
 class GenreRestController(private val genreService: GenreService) {
     @GetMapping
     @ResponseBody
     fun findAll() = genreService.findAll()
+    @PreAuthorize("hasAuthority('insertar-generos')")
     @PostMapping("all")
     @ResponseBody
     fun insertAllFromIGDB() = genreService.insertAllFromIGDB()
@@ -38,11 +43,11 @@ class GenreRestController(private val genreService: GenreService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.platforms}")
-@CrossOrigin(origins = ["http://localhost:3000", "http://localhost:3001", "\${ip.domain}"])
 class PlatformRestController(private val platformService: PlatformService) {
     @GetMapping
     @ResponseBody
     fun findAll() = platformService.findAll()
+    @PreAuthorize("hasAuthority('insertar-plataformas')")
     @PostMapping("all")
     @ResponseBody
     fun insertAllFromIGDB() = platformService.insertAllFromIGDB()
@@ -51,7 +56,6 @@ class PlatformRestController(private val platformService: PlatformService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.games}")
-@CrossOrigin(origins = ["http://localhost:3000", "http://localhost:3001", "\${ip.domain}"])
 class GameRestController(private val gameService: GameService) {
     @GetMapping
     @ResponseBody
@@ -68,10 +72,56 @@ class GameRestController(private val gameService: GameService) {
     @GetMapping("{id}")
     @ResponseBody
     fun findById(@PathVariable("id") id: String) = gameService.findById(id)
+    @PreAuthorize("hasAuthority('insertar-juego')")
     @PostMapping("{id}")
     @ResponseBody
     fun insert(@PathVariable("id") id: String) = gameService.insert(id)
+    @PreAuthorize("hasAuthority('insertar-top-juegos')")
     @PostMapping("all")
     @ResponseBody
     fun insertTop5000() = gameService.insertTop5000ByRatingFromIGDB()
+}
+// Privilege Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.privileges}")
+class PrivilegeRestController(private val privilegeService: PrivilegeService) {
+    @PreAuthorize("hasAuthority('ver-privilegios')")
+    @GetMapping
+    @ResponseBody
+    fun findAll() = privilegeService.findAll()
+    @PreAuthorize("hasAuthority('insertar-privilegios')")
+    @PostMapping("all")
+    @ResponseBody
+    fun insertAllNeeded() = privilegeService.insertAllNeeded()
+}
+// Role Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.roles}")
+class RoleRestController(private val roleService: RoleService) {
+    @PreAuthorize("hasAuthority('ver-roles')")
+    @GetMapping
+    @ResponseBody
+    fun findAll() = roleService.findAll()
+    @PreAuthorize("hasAuthority('insertar-roles')")
+    @PostMapping("all")
+    @ResponseBody
+    fun insertAllNeeded() = roleService.insertAllNeeded()
+}
+// Role Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.users}")
+class UserRestController(private val userService: UserService) {
+    @GetMapping("{id}")
+    @ResponseBody
+    fun findById(@PathVariable("id") id: Long) = userService.findById(id)
+    @PreAuthorize("hasAuthority('insertar-administrador-principal')")
+    @PostMapping("main")
+    @ResponseBody
+    fun insertMainAdmin() = userService.insertMainAdmin()
+    @PostMapping
+    @ResponseBody
+    fun insert(@RequestBody userRequest: UserRequest) = userService.insert(userRequest)
 }
