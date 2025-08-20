@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
 import java.text.Normalizer
-import java.time.ZonedDateTime
 import java.util.Calendar
 import java.util.Date
 import kotlin.math.roundToInt
@@ -442,13 +441,15 @@ class AbstractPrivilegeService(
             PrivilegeRequest("Insertar Temas", "Permite insertar temas en el sistema"),
             PrivilegeRequest("Insertar Géneros", "Permite insertar géneros en el sistema"),
             PrivilegeRequest("Insertar Plataformas", "Permite insertar plataformas en el sistema"),
-            PrivilegeRequest("Insertar Top Juegos", "Permite insertar top de juegos por Rating"),
-            PrivilegeRequest("Insertar Juego", "Permite insertar un juego"),
+            PrivilegeRequest("Insertar Top Juegos", "Permite insertar top de juegos por Rating en el sistema"),
+            PrivilegeRequest("Insertar Juego", "Permite insertar un juego en el sistema"),
             PrivilegeRequest("Ver Privilegios", "Permite obtener los privilegios del sistema"),
             PrivilegeRequest("Insertar Privilegios", "Permite insertar privilegios en el sistema"),
             PrivilegeRequest("Ver Roles", "Permite obtener los roles del sistema"),
             PrivilegeRequest("Insertar Roles", "Permite insertar roles en el sistema"),
             PrivilegeRequest("Insertar Administrador Principal", "Permite insertar el usuario administrador principal en el sistema"),
+            PrivilegeRequest("Ver Logros", "Permite obtener los logros del sistema"),
+            PrivilegeRequest("Insertar Logros", "Permite insertar logros en el sistema"),
         )
         // Create a new privileges list with privileges request
         val privilegesList = privilegeRequestList.map {
@@ -461,19 +462,6 @@ class AbstractPrivilegeService(
         }
         // Return the privileges list as privilege responses list
         return privilegeMapper.privilegeListToPrivilegeResponsesList(privilegesList)
-    }
-    // Function that allow to transform a text into slug
-    private fun toSlug(text: String): String {
-        // Return String as Slug Form
-        return Normalizer.normalize(text, Normalizer.Form.NFD)
-            // Remove Accents
-            .replace("\\p{M}+".toRegex(), "")
-            // Put in Lowercase
-            .lowercase()
-            // Replace all chars that are not letters or numbers
-            .replace("\\W+".toRegex(), "-")
-            // Remove "-" from start and end
-            .trim('-')
     }
 }
 // Role Service Interface where the functions to be used in
@@ -495,15 +483,15 @@ class AbstractRoleService(
     val privilegeRepository: PrivilegeRepository
 ): RoleService {
     override fun findAll(): List<RoleResponse> {
-        // Return all Roles as Role Responses ordered by slug
+        // Return all Roles as Role Responses ordered by id
         return roleMapper.rolesListToRoleResponsesList(roleRepository.findAllByOrderByIdAsc())
     }
     override fun insertAllNeeded(): List<RoleResponse> {
         // Needed Roles Request List
         val roleRequestsList = listOf(
-            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal")),
-            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal")),
-            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego"))
+            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros")),
+            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros")),
+            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego", "ver-logros"))
         )
         // Create a new Roles list with Role requests
         val rolesList = roleRequestsList.map {
@@ -516,10 +504,11 @@ class AbstractRoleService(
             }.toSet()
             // Check if the roles already exists
             val role = roleRepository.findByNameIgnoringCase(it.name).orElse(null)
-            // If already exists, throw a new error
+            // If already exists, update the role, if not, create a new role
             if (role == null) {
                 // Create a new Roles
                 val newRole = roleMapper.roleRequestToRole(it)
+                newRole.privilegesList = mutableSetOf()
                 newRole.privilegesList.addAll(privilegesList)
                 // Save it into database
                 roleRepository.save(newRole)
@@ -605,6 +594,59 @@ class AbstractUserService(
     // Encode Passwords
     private fun passwordEncoder(password: String): String {
         return BCryptPasswordEncoder().encode(password)
+    }
+}
+// Achievement Service Interface where the functions to be used in
+// Spring Abstract Achievement Service are declared
+interface AchievementService {
+    fun findAll(): List<AchievementResponse>
+    fun insertAllNeeded(): List<AchievementResponse>
+}
+// Spring Abstract Achievement Service
+@Suppress("unused")
+@Service
+class AbstractAchievementService(
+    // Privilege Service Props
+    @Autowired
+    val achievementRepository: AchievementRepository,
+    @Autowired
+    val achievementMapper: AchievementMapper
+): AchievementService {
+    override fun findAll(): List<AchievementResponse> {
+        // Return all Achievement as Achievement Responses ordered by id
+        return achievementMapper.achievementsListToAchievementResponsesList(achievementRepository.findAllByOrderByIdAsc())
+    }
+    override fun insertAllNeeded(): List<AchievementResponse> {
+        // Achievement Requests List Needed
+        val achievementRequestsList = listOf(
+            AchievementRequest("Completado", 1),
+            AchievementRequest("Todo Offline", 2),
+            AchievementRequest("PsicoPlatino", 3),
+            AchievementRequest("PseudoPlatino", 4),
+            AchievementRequest("Platino", 4),
+        )
+        // Create a new Achievements list with Achievement requests
+        val achievementsList = achievementRequestsList.map {
+            val achievement = achievementRepository.findByNameIgnoringCase(it.name).orElse(null)
+            // If already exists, update the achievement, if not, create a new achievement
+            if (achievement == null) {
+                // Create a Slug from name
+                val logo = toSlug(it.name)
+                // Create a new Achievement
+                val newAchievement = achievementMapper.achievementRequestToAchievement(logo, it)
+                // Save it into database
+                achievementRepository.save(newAchievement)
+            }
+            else {
+                // Update existing achievement
+                achievement.name = it.name
+                achievement.points = it.points
+                achievement.logo = toSlug(it.name)
+                achievementRepository.save(achievement)
+            }
+        }
+        // Return the Achievements list as Achievement responses list
+        return achievementMapper.achievementsListToAchievementResponsesList(achievementsList)
     }
 }
 

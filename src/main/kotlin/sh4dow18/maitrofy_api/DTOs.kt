@@ -18,6 +18,10 @@ data class UserRequest(
     var name: String,
     var password: String,
 )
+data class AchievementRequest(
+    var name: String,
+    var points: Int,
+)
 
 // Special Request
 
@@ -80,6 +84,12 @@ data class UserResponse(
     var enabled: Boolean,
     var image: Boolean,
     var role: String,
+)
+data class AchievementResponse(
+    var id: Long,
+    var name: String,
+    var points: Int,
+    var logo: String,
 )
 
 // Minimal Responses

@@ -106,3 +106,19 @@ interface UserMapper {
         @Context newRole: Role,
     ): User
 }
+// Achievement Mapper
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+interface AchievementMapper {
+    fun achievementToAchievementResponse(
+        achievement: Achievement
+    ): AchievementResponse
+    fun achievementsListToAchievementResponsesList(
+        achievementsList: List<Achievement>
+    ): List<AchievementResponse>
+    @Mapping(target = "logo", expression = "java(newSlug)")
+    @Mapping(target = "gameLogsList", expression = EMPTY_LIST)
+    fun achievementRequestToAchievement(
+        newSlug: String,
+        achievementRequest: AchievementRequest
+    ): Achievement
+}

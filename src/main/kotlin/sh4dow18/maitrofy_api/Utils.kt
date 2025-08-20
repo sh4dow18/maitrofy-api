@@ -1,4 +1,6 @@
 package sh4dow18.maitrofy_api
+// Utils Requirements
+import java.text.Normalizer
 // Inline to copy this function to every place where it is used
 // Reified allows to know the generic type in execution time
 // getTyped is an extension of Map that will know that "T" is "String" and will do "as? String" internally
@@ -31,3 +33,16 @@ fun Map<String, Any?>.toIgdbGame() = IgdbGameResponse(
     platforms = getList("platforms"),
     themes = getList("themes")
 )
+// Function that allow to transform a text into slug
+fun toSlug(text: String): String {
+    // Return String as Slug Form
+    return Normalizer.normalize(text, Normalizer.Form.NFD)
+        // Remove Accents
+        .replace("\\p{M}+".toRegex(), "")
+        // Put in Lowercase
+        .lowercase()
+        // Replace all chars that are not letters or numbers
+        .replace("\\W+".toRegex(), "-")
+        // Remove "-" from start and end
+        .trim('-')
+}

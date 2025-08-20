@@ -125,3 +125,17 @@ class UserRestController(private val userService: UserService) {
     @ResponseBody
     fun insert(@RequestBody userRequest: UserRequest) = userService.insert(userRequest)
 }
+// Achievement Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.achievements}")
+class AchievementRestController(private val achievementService: AchievementService) {
+    @PreAuthorize("hasAuthority('ver-logros')")
+    @GetMapping
+    @ResponseBody
+    fun findAll() = achievementService.findAll()
+    @PreAuthorize("hasAuthority('insertar-logros')")
+    @PostMapping("all")
+    @ResponseBody
+    fun insertAllNeeded() = achievementService.insertAllNeeded()
+}
