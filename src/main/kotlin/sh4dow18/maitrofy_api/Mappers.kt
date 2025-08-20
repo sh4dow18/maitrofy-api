@@ -100,6 +100,7 @@ interface UserMapper {
     @Mapping(target = "enabled", expression = "java(true)")
     @Mapping(target = "image", expression = "java(false)")
     @Mapping(target = "role", expression = "java(newRole)")
+    @Mapping(target = "gameLogsList", expression = EMPTY_LIST)
     fun userRequestToUser(
         userRequest: UserRequest,
         @Context newRole: Role,

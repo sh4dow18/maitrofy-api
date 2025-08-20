@@ -183,7 +183,8 @@ class AbstractPlatformService(
             val platform = Platform(
                 id = id,
                 name = name,
-                gamesList = emptySet()
+                gamesList = emptySet(),
+                gameLogsList = emptyList()
             )
             // Save the new Platform
             platformRepository.save(platform)
@@ -360,7 +361,8 @@ class AbstractGameService(
                 ?.let { gameModesMap[it] } ?: "",
             themesList = themeRepository.findAllById(game.themes.map { it.toLong() }).toSet(),
             genresList = genreRepository.findAllById(game.genres.map { it.toLong() }).toSet(),
-            platformsList = platformRepository.findAllById(game.platforms.map { it.toLong() }).toSet()
+            platformsList = platformRepository.findAllById(game.platforms.map { it.toLong() }).toSet(),
+            gameLogsList = emptyList()
         )
     }
     // Extract File name from URL
