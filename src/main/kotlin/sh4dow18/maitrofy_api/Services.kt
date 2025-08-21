@@ -675,7 +675,7 @@ class AbstractGameLogService(
 ): GameLogService {
     override fun findAllByUser(): List<MinimalGameLogResponse> {
         // Return all Game Logs from Logged User as Minimal Game Log Responses List
-        return gameLogMapper.gameLogsListToMinimalGameLogResponsesList(gameLogRepository.findByUserId(LoggedUser.get()))
+        return gameLogMapper.gameLogsListToMinimalGameLogResponsesList(gameLogRepository.findByUserIdOrderByDateDesc(LoggedUser.get()))
     }
     override fun findByGameAndUser(game: String): GameLogResponse {
         // Get User Id from JWT

@@ -86,5 +86,5 @@ interface AchievementRepository: JpaRepository<Achievement, Long> {
 // Game Log Repository
 @Repository
 interface GameLogRepository: JpaRepository<GameLog, String> {
-    fun findByUserId(userId: Long): List<GameLog>
+    fun findByUserIdOrderByDateDesc(userId: Long): List<GameLog>
 }
