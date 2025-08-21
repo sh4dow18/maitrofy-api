@@ -14,7 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
-import java.text.Normalizer
+import java.time.Instant
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.Calendar
 import java.util.Date
@@ -183,7 +184,8 @@ class AbstractPlatformService(
             val platform = Platform(
                 id = id,
                 name = name,
-                gamesList = emptySet()
+                gamesList = emptySet(),
+                gameLogsList = emptyList()
             )
             // Save the new Platform
             platformRepository.save(platform)
@@ -360,7 +362,8 @@ class AbstractGameService(
                 ?.let { gameModesMap[it] } ?: "",
             themesList = themeRepository.findAllById(game.themes.map { it.toLong() }).toSet(),
             genresList = genreRepository.findAllById(game.genres.map { it.toLong() }).toSet(),
-            platformsList = platformRepository.findAllById(game.platforms.map { it.toLong() }).toSet()
+            platformsList = platformRepository.findAllById(game.platforms.map { it.toLong() }).toSet(),
+            gameLogsList = emptyList()
         )
     }
     // Extract File name from URL
@@ -440,13 +443,19 @@ class AbstractPrivilegeService(
             PrivilegeRequest("Insertar Temas", "Permite insertar temas en el sistema"),
             PrivilegeRequest("Insertar Géneros", "Permite insertar géneros en el sistema"),
             PrivilegeRequest("Insertar Plataformas", "Permite insertar plataformas en el sistema"),
-            PrivilegeRequest("Insertar Top Juegos", "Permite insertar top de juegos por Rating"),
-            PrivilegeRequest("Insertar Juego", "Permite insertar un juego"),
+            PrivilegeRequest("Insertar Top Juegos", "Permite insertar top de juegos por Rating en el sistema"),
+            PrivilegeRequest("Insertar Juego", "Permite insertar un juego en el sistema"),
             PrivilegeRequest("Ver Privilegios", "Permite obtener los privilegios del sistema"),
             PrivilegeRequest("Insertar Privilegios", "Permite insertar privilegios en el sistema"),
             PrivilegeRequest("Ver Roles", "Permite obtener los roles del sistema"),
             PrivilegeRequest("Insertar Roles", "Permite insertar roles en el sistema"),
             PrivilegeRequest("Insertar Administrador Principal", "Permite insertar el usuario administrador principal en el sistema"),
+            PrivilegeRequest("Ver Logros", "Permite obtener los logros del sistema"),
+            PrivilegeRequest("Insertar Logros", "Permite insertar logros en el sistema"),
+            PrivilegeRequest("Ver mis Registros de Juego", "Permite ver todos los registros de juego que tienen mi id de usuario"),
+            PrivilegeRequest("Ver mi Registro de Juego Especifico", "Permite ver la información completa de un registro específico que tiene mi id de usuario"),
+            PrivilegeRequest("Insertar Registro de Juego para Mi", "Permite insertar registros de juego con mi id de usuario"),
+            PrivilegeRequest("Actualizar Registro de Juego para Mi", "Permite actualizar registros de juego con mi id de usuario"),
         )
         // Create a new privileges list with privileges request
         val privilegesList = privilegeRequestList.map {
@@ -459,19 +468,6 @@ class AbstractPrivilegeService(
         }
         // Return the privileges list as privilege responses list
         return privilegeMapper.privilegeListToPrivilegeResponsesList(privilegesList)
-    }
-    // Function that allow to transform a text into slug
-    private fun toSlug(text: String): String {
-        // Return String as Slug Form
-        return Normalizer.normalize(text, Normalizer.Form.NFD)
-            // Remove Accents
-            .replace("\\p{M}+".toRegex(), "")
-            // Put in Lowercase
-            .lowercase()
-            // Replace all chars that are not letters or numbers
-            .replace("\\W+".toRegex(), "-")
-            // Remove "-" from start and end
-            .trim('-')
     }
 }
 // Role Service Interface where the functions to be used in
@@ -493,15 +489,15 @@ class AbstractRoleService(
     val privilegeRepository: PrivilegeRepository
 ): RoleService {
     override fun findAll(): List<RoleResponse> {
-        // Return all Roles as Role Responses ordered by slug
+        // Return all Roles as Role Responses ordered by id
         return roleMapper.rolesListToRoleResponsesList(roleRepository.findAllByOrderByIdAsc())
     }
     override fun insertAllNeeded(): List<RoleResponse> {
         // Needed Roles Request List
         val roleRequestsList = listOf(
-            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal")),
-            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal")),
-            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego"))
+            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi")),
+            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi")),
+            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego", "ver-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi"))
         )
         // Create a new Roles list with Role requests
         val rolesList = roleRequestsList.map {
@@ -514,10 +510,11 @@ class AbstractRoleService(
             }.toSet()
             // Check if the roles already exists
             val role = roleRepository.findByNameIgnoringCase(it.name).orElse(null)
-            // If already exists, throw a new error
+            // If already exists, update the role, if not, create a new role
             if (role == null) {
                 // Create a new Roles
                 val newRole = roleMapper.roleRequestToRole(it)
+                newRole.privilegesList = mutableSetOf()
                 newRole.privilegesList.addAll(privilegesList)
                 // Save it into database
                 roleRepository.save(newRole)
@@ -603,6 +600,169 @@ class AbstractUserService(
     // Encode Passwords
     private fun passwordEncoder(password: String): String {
         return BCryptPasswordEncoder().encode(password)
+    }
+}
+// Achievement Service Interface where the functions to be used in
+// Spring Abstract Achievement Service are declared
+interface AchievementService {
+    fun findAll(): List<AchievementResponse>
+    fun insertAllNeeded(): List<AchievementResponse>
+}
+// Spring Abstract Achievement Service
+@Suppress("unused")
+@Service
+class AbstractAchievementService(
+    // Achievement Service Props
+    @Autowired
+    val achievementRepository: AchievementRepository,
+    @Autowired
+    val achievementMapper: AchievementMapper
+): AchievementService {
+    override fun findAll(): List<AchievementResponse> {
+        // Return all Achievement as Achievement Responses ordered by id
+        return achievementMapper.achievementsListToAchievementResponsesList(achievementRepository.findAllByOrderByIdAsc())
+    }
+    override fun insertAllNeeded(): List<AchievementResponse> {
+        // Achievement Requests List Needed
+        val achievementRequestsList = listOf(
+            AchievementRequest("Completado", 1),
+            AchievementRequest("Todo Offline", 2),
+            AchievementRequest("PsicoPlatino", 3),
+            AchievementRequest("PseudoPlatino", 4),
+            AchievementRequest("Platino", 4),
+        )
+        // Create a new Achievements list with Achievement requests
+        val achievementsList = achievementRequestsList.map {
+            val achievement = achievementRepository.findByNameIgnoringCase(it.name).orElse(null)
+            // If already exists, update the achievement, if not, create a new achievement
+            if (achievement == null) {
+                // Create a Slug from name
+                val logo = toSlug(it.name)
+                // Create a new Achievement
+                val newAchievement = achievementMapper.achievementRequestToAchievement(logo, it)
+                // Save it into database
+                achievementRepository.save(newAchievement)
+            }
+            else {
+                // Update existing achievement
+                achievement.name = it.name
+                achievement.points = it.points
+                achievement.logo = toSlug(it.name)
+                achievementRepository.save(achievement)
+            }
+        }
+        // Return the Achievements list as Achievement responses list
+        return achievementMapper.achievementsListToAchievementResponsesList(achievementsList)
+    }
+}
+// Game Log Service Interface where the functions to be used in
+// Spring Abstract Game Log Service are declared
+interface GameLogService {
+    fun findAllByUser(): List<MinimalGameLogResponse>
+    fun findByGameAndUser(game: String): GameLogResponse
+    fun insertWithUser(gameLogRequest: GameLogRequest): GameLogResponse
+    fun updateWithUser(gameLogUpdateRequest: GameLogUpdateRequest): GameLogResponse
+}
+// Spring Abstract Game Log Service
+@Suppress("unused")
+@Service
+class AbstractGameLogService(
+    // Game Log Service Props
+    @Autowired
+    val gameLogRepository: GameLogRepository,
+    @Autowired
+    val gameLogMapper: GameLogMapper,
+    @Autowired
+    val userRepository: UserRepository,
+    @Autowired
+    val gameRepository: GameRepository,
+    @Autowired
+    val achievementRepository: AchievementRepository
+): GameLogService {
+    override fun findAllByUser(): List<MinimalGameLogResponse> {
+        // Return all Game Logs from Logged User as Minimal Game Log Responses List
+        return gameLogMapper.gameLogsListToMinimalGameLogResponsesList(gameLogRepository.findByUserIdOrderByDateDesc(LoggedUser.get()))
+    }
+    override fun findByGameAndUser(game: String): GameLogResponse {
+        // Get User Id from JWT
+        val userId = LoggedUser.get()
+        // Checks if a game log exists by id, that is the combination of user id and game slug submitted
+        val gameLog = gameLogRepository.findById("$userId-${game}").orElseThrow {
+            NoSuchElementExists(game, "Registro de Juego para el Usuario con el id $userId")
+        }
+        // Return Game Log as Game Log Response
+        return gameLogMapper.gameLogToGameLogResponse(gameLog)
+    }
+    override fun insertWithUser(gameLogRequest: GameLogRequest): GameLogResponse {
+        // Get User Id from JWT
+        val userId = LoggedUser.get()
+        // Check if the current user exists
+        val user = userRepository.findById(userId).orElseThrow {
+            NoSuchElementExists("$userId", "Usuario")
+        }
+        // Checks if the game already exists as a game log in the user's game logs
+        val gameLog = user.gameLogsList.find { it.game.slug == gameLogRequest.game }
+        // If already exists, throw a new error
+        if (gameLog != null) {
+            throw ElementAlreadyExists(gameLogRequest.game, "Registro de Juego del Usuario con el Id $userId")
+        }
+        // If not exists, find the game, if not exists, throw an error
+        val game = gameRepository.findById(gameLogRequest.game).orElseThrow {
+            NoSuchElementExists(gameLogRequest.game, "Juego")
+        }
+        // Creates the new game log with the game, user and the new game log slug that is the combination of user id and game slug
+        val newGameLog = gameLogMapper.gameLogRequestToGameLog(gameLogRequest, "$userId-${game.slug}", game, user)
+        // Returns the New Game Log as Game Log Response
+        return gameLogMapper.gameLogToGameLogResponse(gameLogRepository.save(newGameLog))
+    }
+    override fun updateWithUser(gameLogUpdateRequest: GameLogUpdateRequest): GameLogResponse {
+        // Check if the review has less than 1000 chars
+        val review = gameLogUpdateRequest.review
+        // If has more than 1000 chars, throw an Error
+        if (review != null && review.length > 1000) {
+            throw BadRequest("La reseña enviada debe tener menos o igual a 1000 Caracteres")
+        }
+        // Get User Id from JWT
+        val userId = LoggedUser.get()
+        // Checks if a game log exists by id, that is the combination of user id and game slug submitted
+        val gameLog = gameLogRepository.findById("$userId-${gameLogUpdateRequest.game}").orElseThrow {
+            NoSuchElementExists(gameLogUpdateRequest.game, "Registro de Juego para el Usuario con el id $userId")
+        }
+        // Check if the platform id was sent, if not, set it as null
+        var platform: Platform? = null
+        if (gameLogUpdateRequest.platform != null) {
+            // If platform id was sent, check if the platform exists in game sent, if not, throw an error
+            platform = gameLog.game.platformsList.find { it.id == gameLogUpdateRequest.platform }
+            if (platform == null) {
+                throw NoSuchElementExists("${gameLogUpdateRequest.platform}", "Plataforma para el Juego ${gameLog.game.name}")
+            }
+        }
+        // Check if the Achievement id was sent, if not, set it as null
+        var achievement: Achievement? = null
+        if (gameLogUpdateRequest.achievement != null) {
+            // If Achievement id was sent, check if the Achievement exists, if not, throw an error
+            achievement = achievementRepository.findById(gameLogUpdateRequest.achievement!!).orElseThrow {
+                NoSuchElementExists("${gameLogUpdateRequest.achievement}", "Logro")
+            }
+        }
+        // Check if timestamp date was sent. if is, transform the timestamp into ZonedDateTime and update it
+        if (gameLogUpdateRequest.date != null) {
+            val newDate = Instant.ofEpochMilli(gameLogUpdateRequest.date!!).atZone(ZoneId.systemDefault())
+            // Check if date sent is valid, if not, throw an error
+            if (newDate > ZonedDateTime.now()) {
+                throw BadRequest("Se envió una fecha futura que no se acepta")
+            }
+            // Set new date
+            gameLog.date = newDate
+        }
+        // Update the game log information
+        gameLog.rating = gameLogUpdateRequest.rating
+        gameLog.review = review
+        gameLog.hoursSpend = gameLogUpdateRequest.hoursSpend
+        gameLog.platform = platform
+        gameLog.achievement = achievement
+        // Returns the New Game Log as Game Log Response
+        return gameLogMapper.gameLogToGameLogResponse(gameLogRepository.save(gameLog))
     }
 }
 

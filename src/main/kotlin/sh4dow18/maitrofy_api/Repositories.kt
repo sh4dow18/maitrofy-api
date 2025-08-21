@@ -73,7 +73,18 @@ interface PrivilegeRepository: JpaRepository<Privilege, String> {
 }
 // Role Repository
 @Repository
-interface RoleRepository: JpaRepository<Role, String> {
+interface RoleRepository: JpaRepository<Role, Long> {
     fun findAllByOrderByIdAsc(): List<Role>
     fun findByNameIgnoringCase(name: String): Optional<Role>
+}
+// Achievement Repository
+@Repository
+interface AchievementRepository: JpaRepository<Achievement, Long> {
+    fun findAllByOrderByIdAsc(): List<Achievement>
+    fun findByNameIgnoringCase(name: String): Optional<Achievement>
+}
+// Game Log Repository
+@Repository
+interface GameLogRepository: JpaRepository<GameLog, String> {
+    fun findByUserIdOrderByDateDesc(userId: Long): List<GameLog>
 }

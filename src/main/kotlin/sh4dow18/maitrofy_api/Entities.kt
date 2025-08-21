@@ -66,7 +66,10 @@ data class Platform(
     var name: String,
     // Many-to-Many Relationship with Game
     @ManyToMany(mappedBy = "platformsList", fetch = FetchType.LAZY, targetEntity = Game::class)
-    var gamesList: Set<Game>
+    var gamesList: Set<Game>,
+    // One-to-Many Relationship with Game Log
+    @OneToMany(mappedBy = "platform", targetEntity = GameLog::class)
+    var gameLogsList: List<GameLog>,
 ) {
     override fun equals(other: Any?): Boolean {
         // Check if the current object is the same instance as other
@@ -120,7 +123,10 @@ data class Game(
         joinColumns = [JoinColumn(name = "game_id", referencedColumnName = "slug")],
         inverseJoinColumns = [JoinColumn(name = "platform_id", referencedColumnName = "id")]
     )
-    var platformsList: Set<Platform>
+    var platformsList: Set<Platform>,
+    // One-to-Many Relationship with Game Log
+    @OneToMany(mappedBy = "game", targetEntity = GameLog::class)
+    var gameLogsList: List<GameLog>,
 ) {
     override fun equals(other: Any?): Boolean {
         // Check if the current object is the same instance as other
@@ -150,6 +156,9 @@ data class User(
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false, referencedColumnName = "id")
     var role: Role,
+    // One-to-Many Relationship with Game Log
+    @OneToMany(mappedBy = "user", targetEntity = GameLog::class)
+    var gameLogsList: List<GameLog>,
 )
 // Role Entity
 @Entity
@@ -206,3 +215,47 @@ data class Privilege(
     // Use the hashCode of the "id" field as the hash code for the entire object
     override fun hashCode(): Int = slug.hashCode()
 }
+// Game Log Entity
+@Entity
+@Table(name = "gameLogs")
+data class GameLog(
+    // Game Log Properties
+    @Id
+    var slug: String,
+    var rating: Int?,
+    var date: ZonedDateTime,
+    @Column(length = 1000)
+    var review: String?,
+    var hoursSpend: Int?,
+    // Many-to-One Relationship with Game
+    @ManyToOne
+    @JoinColumn(name = "game_id", nullable = false, referencedColumnName = "slug")
+    var game: Game,
+    // Many-to-One Relationship with User
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "id")
+    var user: User,
+    // Many-to-One Relationship with Platform
+    @ManyToOne
+    @JoinColumn(name = "platform_id", nullable = true, referencedColumnName = "id")
+    var platform: Platform?,
+    // Many-to-One Relationship with Achievement
+    @ManyToOne
+    @JoinColumn(name = "achievement_id", nullable = true, referencedColumnName = "id")
+    var achievement: Achievement?
+)
+// Achievement Entity
+@Entity
+@Table(name = "achievements")
+data class Achievement(
+    // Achievement Properties
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long,
+    var name: String,
+    var points: Int,
+    var logo: String,
+    // One-to-Many Relationship with Game Log
+    @OneToMany(mappedBy = "achievement", targetEntity = GameLog::class)
+    var gameLogsList: List<GameLog>,
+)

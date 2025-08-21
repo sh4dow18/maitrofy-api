@@ -4,6 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -124,4 +125,40 @@ class UserRestController(private val userService: UserService) {
     @PostMapping
     @ResponseBody
     fun insert(@RequestBody userRequest: UserRequest) = userService.insert(userRequest)
+}
+// Achievement Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.achievements}")
+class AchievementRestController(private val achievementService: AchievementService) {
+    @PreAuthorize("hasAuthority('ver-logros')")
+    @GetMapping
+    @ResponseBody
+    fun findAll() = achievementService.findAll()
+    @PreAuthorize("hasAuthority('insertar-logros')")
+    @PostMapping("all")
+    @ResponseBody
+    fun insertAllNeeded() = achievementService.insertAllNeeded()
+}
+// Game Log Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.gameLogs}")
+class GameLogRestController(private val gameLogService: GameLogService) {
+    @PreAuthorize("hasAuthority('ver-mis-registros-de-juego')")
+    @GetMapping("user")
+    @ResponseBody
+    fun findAllByUser() = gameLogService.findAllByUser()
+    @PreAuthorize("hasAuthority('ver-mi-registro-de-juego-especifico')")
+    @GetMapping("user/{game}")
+    @ResponseBody
+    fun findByGameAndUser(@PathVariable("game") game: String) = gameLogService.findByGameAndUser(game)
+    @PreAuthorize("hasAuthority('insertar-registro-de-juego-para-mi')")
+    @PostMapping("user")
+    @ResponseBody
+    fun insertWithUser(@RequestBody userLogRequest: GameLogRequest) = gameLogService.insertWithUser(userLogRequest)
+    @PreAuthorize("hasAuthority('actualizar-registro-de-juego-para-mi')")
+    @PutMapping("user")
+    @ResponseBody
+    fun updateWithUser(@RequestBody userLogUpdateRequest: GameLogUpdateRequest) = gameLogService.updateWithUser(userLogUpdateRequest)
 }

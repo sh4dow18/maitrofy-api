@@ -100,8 +100,58 @@ interface UserMapper {
     @Mapping(target = "enabled", expression = "java(true)")
     @Mapping(target = "image", expression = "java(false)")
     @Mapping(target = "role", expression = "java(newRole)")
+    @Mapping(target = "gameLogsList", expression = EMPTY_LIST)
     fun userRequestToUser(
         userRequest: UserRequest,
         @Context newRole: Role,
     ): User
+}
+// Achievement Mapper
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+interface AchievementMapper {
+    fun achievementToAchievementResponse(
+        achievement: Achievement
+    ): AchievementResponse
+    fun achievementsListToAchievementResponsesList(
+        achievementsList: List<Achievement>
+    ): List<AchievementResponse>
+    @Mapping(target = "logo", expression = "java(newSlug)")
+    @Mapping(target = "gameLogsList", expression = EMPTY_LIST)
+    fun achievementRequestToAchievement(
+        newSlug: String,
+        achievementRequest: AchievementRequest
+    ): Achievement
+}
+// Game Log Mapper
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+interface GameLogMapper {
+    @Mapping(target = "date", expression = "java(gameLog.getDate().$DATE_TO_STRING)")
+    @Mapping(target = "platform", expression = "java(gameLog.getPlatform() != null ? gameLog.getPlatform().getName() : null)")
+    @Mapping(target = "game.themes", expression = "java(game.getThemesList().$MAP(Theme::getName).$LIST_TO_STRING)")
+    @Mapping(target = "game.genres", expression = "java(game.getGenresList().$MAP(Genre::getName).$LIST_TO_STRING)")
+    @Mapping(target = "game.platforms", expression = "java(game.getPlatformsList().$MAP(Platform::getName).$LIST_TO_STRING)")
+    fun gameLogToGameLogResponse(
+        gameLog: GameLog
+    ): GameLogResponse
+    @Mapping(target = "platform", expression = "java(gameLog.getPlatform() != null ? gameLog.getPlatform().getName() : null)")
+    @Mapping(target = "date", expression = "java(gameLog.getDate().$DATE_TO_STRING)")
+    fun gameLogToMinimalGameLogResponse(
+        gameLog: GameLog
+    ): MinimalGameLogResponse
+    fun gameLogsListToMinimalGameLogResponsesList(
+        gameLogsList: List<GameLog>
+    ): List<MinimalGameLogResponse> {
+        return gameLogsList.map { gameLogToMinimalGameLogResponse(it) }
+    }
+    @Mapping(target = "slug", expression = "java(newSlug)")
+    @Mapping(target = "rating", ignore = true)
+    @Mapping(target = "date", expression = "java(java.time.ZonedDateTime.now())")
+    @Mapping(target = "game", expression = "java(existingGame)")
+    @Mapping(target = "user", expression = "java(existingUser)")
+    fun gameLogRequestToGameLog(
+        gameLogRequest: GameLogRequest,
+        newSlug: String,
+        existingGame: Game,
+        existingUser: User
+    ): GameLog
 }
