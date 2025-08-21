@@ -450,6 +450,9 @@ class AbstractPrivilegeService(
             PrivilegeRequest("Insertar Administrador Principal", "Permite insertar el usuario administrador principal en el sistema"),
             PrivilegeRequest("Ver Logros", "Permite obtener los logros del sistema"),
             PrivilegeRequest("Insertar Logros", "Permite insertar logros en el sistema"),
+            PrivilegeRequest("Ver mis Registros de Juego", "Permite ver todos los registros de juego que tienen mi id de usuario"),
+            PrivilegeRequest("Ver mi Registro de Juego Especifico", "Permite ver la información completa de un registro específico que tiene mi id de usuario"),
+            PrivilegeRequest("Insertar Registro de Juego para Mi", "Permite insertar registros de juego con mi id de usuario"),
         )
         // Create a new privileges list with privileges request
         val privilegesList = privilegeRequestList.map {
@@ -489,9 +492,9 @@ class AbstractRoleService(
     override fun insertAllNeeded(): List<RoleResponse> {
         // Needed Roles Request List
         val roleRequestsList = listOf(
-            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros")),
-            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros")),
-            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego", "ver-logros"))
+            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi")),
+            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi")),
+            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego", "ver-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi"))
         )
         // Create a new Roles list with Role requests
         val rolesList = roleRequestsList.map {
@@ -606,7 +609,7 @@ interface AchievementService {
 @Suppress("unused")
 @Service
 class AbstractAchievementService(
-    // Privilege Service Props
+    // Achievement Service Props
     @Autowired
     val achievementRepository: AchievementRepository,
     @Autowired
@@ -647,6 +650,64 @@ class AbstractAchievementService(
         }
         // Return the Achievements list as Achievement responses list
         return achievementMapper.achievementsListToAchievementResponsesList(achievementsList)
+    }
+}
+// Game Log Service Interface where the functions to be used in
+// Spring Abstract Game Log Service are declared
+interface GameLogService {
+    fun findAllByUser(): List<MinimalGameLogResponse>
+    fun findByGameAndUser(game: String): GameLogResponse
+    fun insertWithUser(gameLogRequest: GameLogRequest): GameLogResponse
+}
+// Spring Abstract Game Log Service
+@Suppress("unused")
+@Service
+class AbstractGameLogService(
+    // Game Log Service Props
+    @Autowired
+    val gameLogRepository: GameLogRepository,
+    @Autowired
+    val gameLogMapper: GameLogMapper,
+    @Autowired
+    val userRepository: UserRepository,
+    @Autowired
+    val gameRepository: GameRepository
+): GameLogService {
+    override fun findAllByUser(): List<MinimalGameLogResponse> {
+        // Return all Game Logs from Logged User as Minimal Game Log Responses List
+        return gameLogMapper.gameLogsListToMinimalGameLogResponsesList(gameLogRepository.findByUserId(LoggedUser.get()))
+    }
+    override fun findByGameAndUser(game: String): GameLogResponse {
+        // Get User Id from JWT
+        val userId = LoggedUser.get()
+        // Checks if a game log exists by id, that is the combination of user id and game slug submitted
+        val gameLog = gameLogRepository.findById("$userId-${game}").orElseThrow {
+            NoSuchElementExists(game, "Registro de Juego para el Usuario con el id $userId")
+        }
+        // Return Game Log as Game Log Response
+        return gameLogMapper.gameLogToGameLogResponse(gameLog)
+    }
+    override fun insertWithUser(gameLogRequest: GameLogRequest): GameLogResponse {
+        // Get User Id from JWT
+        val userId = LoggedUser.get()
+        // Check if the current user exists
+        val user = userRepository.findById(userId).orElseThrow {
+            NoSuchElementExists("$userId", "Usuario")
+        }
+        // Checks if the game already exists as a game log in the user's game logs
+        val gameLog = user.gameLogsList.find { it.game.slug == gameLogRequest.game }
+        // If already exists, throw a new error
+        if (gameLog != null) {
+            throw ElementAlreadyExists(gameLogRequest.game, "Registro de Juego del Usuario con el Id $userId")
+        }
+        // If not exists, find the game, if not exists, throw an error
+        val game = gameRepository.findById(gameLogRequest.game).orElseThrow {
+            NoSuchElementExists(gameLogRequest.game, "Juego")
+        }
+        // Creates the new game log with the game, user and the new game log slug that is the combination of user id and game slug
+        val newGameLog = gameLogMapper.gameLogRequestToGameLog(gameLogRequest, "$userId-${game.slug}", game, user)
+        // Returns the New Game Log as Game Log Response
+        return gameLogMapper.gameLogToGameLogResponse(gameLogRepository.save(newGameLog))
     }
 }
 

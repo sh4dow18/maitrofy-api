@@ -83,3 +83,8 @@ interface AchievementRepository: JpaRepository<Achievement, Long> {
     fun findAllByOrderByIdAsc(): List<Achievement>
     fun findByNameIgnoringCase(name: String): Optional<Achievement>
 }
+// Game Log Repository
+@Repository
+interface GameLogRepository: JpaRepository<GameLog, String> {
+    fun findByUserId(userId: Long): List<GameLog>
+}

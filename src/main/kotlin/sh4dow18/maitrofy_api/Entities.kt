@@ -221,8 +221,7 @@ data class Privilege(
 data class GameLog(
     // Game Log Properties
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long,
+    var slug: String,
     var rating: Int?,
     var date: ZonedDateTime,
     var review: String?,
@@ -238,11 +237,11 @@ data class GameLog(
     // Many-to-One Relationship with Platform
     @ManyToOne
     @JoinColumn(name = "platform_id", nullable = true, referencedColumnName = "id")
-    var platform: Platform,
+    var platform: Platform?,
     // Many-to-One Relationship with Achievement
     @ManyToOne
     @JoinColumn(name = "achievement_id", nullable = true, referencedColumnName = "id")
-    var achievement: Achievement
+    var achievement: Achievement?
 )
 // Achievement Entity
 @Entity

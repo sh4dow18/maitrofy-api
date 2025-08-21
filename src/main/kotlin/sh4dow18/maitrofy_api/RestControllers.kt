@@ -139,3 +139,21 @@ class AchievementRestController(private val achievementService: AchievementServi
     @ResponseBody
     fun insertAllNeeded() = achievementService.insertAllNeeded()
 }
+// Game Log Rest Controller
+@Suppress("unused")
+@RestController
+@RequestMapping("\${endpoint.gameLogs}")
+class GameLogRestController(private val gameLogService: GameLogService) {
+    @PreAuthorize("hasAuthority('ver-mis-registros-de-juego')")
+    @GetMapping("user")
+    @ResponseBody
+    fun findAllByUser() = gameLogService.findAllByUser()
+    @PreAuthorize("hasAuthority('ver-mi-registro-de-juego-especifico')")
+    @GetMapping("user/{game}")
+    @ResponseBody
+    fun findByGameAndUser(@PathVariable("game") game: String) = gameLogService.findByGameAndUser(game)
+    @PreAuthorize("hasAuthority('insertar-registro-de-juego-para-mi')")
+    @PostMapping("user")
+    @ResponseBody
+    fun insertWithUser(@RequestBody userLogRequest: GameLogRequest) = gameLogService.insertWithUser(userLogRequest)
+}

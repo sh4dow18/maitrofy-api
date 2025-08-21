@@ -22,6 +22,9 @@ data class AchievementRequest(
     var name: String,
     var points: Int,
 )
+data class GameLogRequest(
+    var game: String
+)
 
 // Special Request
 
@@ -91,6 +94,16 @@ data class AchievementResponse(
     var points: Int,
     var logo: String,
 )
+data class GameLogResponse(
+    var slug: String,
+    var rating: Int?,
+    var date: String,
+    var review: String?,
+    var hoursSpend: Int?,
+    var game: GameResponse,
+    var platform: String?,
+    var achievement: AchievementResponse?
+)
 
 // Minimal Responses
 
@@ -98,6 +111,14 @@ data class MinimalGameResponse(
     var slug: String,
     var name: String,
     var cover: String,
+)
+data class MinimalGameLogResponse(
+    var slug: String,
+    var rating: Int?,
+    var date: String,
+    var game: MinimalGameResponse,
+    var platform: String?,
+    var achievement: AchievementResponse?
 )
 
 // IGDB API Responses
