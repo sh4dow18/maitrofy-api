@@ -4,6 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -156,4 +157,8 @@ class GameLogRestController(private val gameLogService: GameLogService) {
     @PostMapping("user")
     @ResponseBody
     fun insertWithUser(@RequestBody userLogRequest: GameLogRequest) = gameLogService.insertWithUser(userLogRequest)
+    @PreAuthorize("hasAuthority('actualizar-registro-de-juego-para-mi')")
+    @PutMapping("user")
+    @ResponseBody
+    fun updateWithUser(@RequestBody userLogUpdateRequest: GameLogUpdateRequest) = gameLogService.updateWithUser(userLogUpdateRequest)
 }

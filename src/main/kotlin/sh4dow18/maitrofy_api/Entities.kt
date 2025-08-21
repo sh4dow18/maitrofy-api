@@ -224,6 +224,7 @@ data class GameLog(
     var slug: String,
     var rating: Int?,
     var date: ZonedDateTime,
+    @Column(length = 1000)
     var review: String?,
     var hoursSpend: Int?,
     // Many-to-One Relationship with Game

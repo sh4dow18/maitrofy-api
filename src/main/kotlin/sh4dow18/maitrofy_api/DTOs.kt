@@ -26,6 +26,18 @@ data class GameLogRequest(
     var game: String
 )
 
+// Update Requests
+
+data class GameLogUpdateRequest(
+    var game: String,
+    var rating: Int?,
+    var date: Long?,
+    var review: String?,
+    var hoursSpend: Int?,
+    var platform: Long?,
+    var achievement: Long?
+)
+
 // Special Request
 
 data class LoginRequest(
