@@ -90,12 +90,12 @@ interface RoleMapper {
 interface UserMapper {
     @Mapping(target = "createdDate", expression = "java(user.getCreatedDate().$DATE_TO_STRING)")
     @Mapping(target = "role", expression = "java(user.getRole().getName())")
-    fun userToUserResponse(
+    fun userToMinimalUserResponse(
         user: User
-    ): UserResponse
-    fun usersListToUserResponsesList(
+    ): MinimalUserResponse
+    fun usersListToMinimalUserResponsesList(
         usersList: List<User>
-    ): List<UserResponse>
+    ): List<MinimalUserResponse>
     @Mapping(target = "createdDate", expression = "java(java.time.ZonedDateTime.now())")
     @Mapping(target = "enabled", expression = "java(true)")
     @Mapping(target = "image", expression = "java(false)")

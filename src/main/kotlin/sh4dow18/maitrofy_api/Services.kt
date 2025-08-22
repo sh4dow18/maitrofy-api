@@ -17,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import kotlin.math.roundToInt
@@ -536,8 +537,8 @@ class AbstractRoleService(
 // Spring Abstract User Service are declared
 interface UserService {
     fun findById(id: Long): UserResponse
-    fun insertMainAdmin(): UserResponse
-    fun insert(userRequest: UserRequest): UserResponse
+    fun insertMainAdmin(): MinimalUserResponse
+    fun insert(userRequest: UserRequest): MinimalUserResponse
 }
 // Spring Abstract User Service
 @Suppress("unused")
@@ -550,6 +551,18 @@ class AbstractUserService(
     val userMapper: UserMapper,
     @Autowired
     val roleRepository: RoleRepository,
+    @Autowired
+    val gameLogRepository: GameLogRepository,
+    @Autowired
+    val achievementRepository: AchievementRepository,
+    @Autowired
+    val achievementMapper: AchievementMapper,
+    @Autowired
+    val themeRepository: ThemeRepository,
+    @Autowired
+    val genreRepository: GenreRepository,
+    @Autowired
+    val platformRepository: PlatformRepository,
     @Value("\${main.user.email}")
     private val mainUserEmail: String,
     @Value("\${main.user.password}")
@@ -560,10 +573,46 @@ class AbstractUserService(
         val user = userRepository.findById(id).orElseThrow {
             NoSuchElementExists("$id", "Usuario")
         }
+        // Transform user Created Date from ZonedDateTime to String
+        val date = user.createdDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy").withZone(ZoneId.systemDefault()))
+        // Set Points to 0
+        var points = 0
+        // Get all Profile Achievements Responses List
+        val achievementsList = achievementRepository.findAll().map {
+            // Get the amount of each achievement that has the user
+            val achievementsAmount = gameLogRepository.findByUserIdAndAchievementId(user.id, it.id).size
+            // Get points with achievements points value and achievements amount
+            points += (it.points * achievementsAmount)
+            // Creates a new Profile Achievements Response
+            ProfileAchievementsResponse(
+                achievement = achievementMapper.achievementToAchievementResponse(it),
+                amount = achievementsAmount
+            )
+        }
+        // Get all user Preferences from Database
+        val favoriteGame = gameLogRepository.findTopByUserIdAndRatingIsNotNullOrderByRatingDesc(user.id).orElse(null)
+        val frequentTheme = themeRepository.findMostFrequentThemeByUserId(user.id).orElse(null)
+        val frequentGenre = genreRepository.findMostFrequentGenreByUserId(user.id).orElse(null)
+        val frequentPlatform = platformRepository.findMostFrequentPlatformByUserId(user.id).orElse(null)
+        val frequentCollection = gameLogRepository.findMostFrequentCollectionByUserId(user.id).orElse(null)
+        val frequentDeveloper = gameLogRepository.findMostFrequentDeveloperByUserId(user.id).orElse(null)
+        val frequentGameMode = gameLogRepository.findMostFrequentGameModeByUserId(user.id).orElse(null)
         // Return user as User Response
-        return userMapper.userToUserResponse(user)
+        return UserResponse(
+            account = ProfileAccountResponse(user.id, user.name, date),
+            statistics = ProfileStatisticsResponse(user.gameLogsList.size, achievementsList, points),
+            preferences = ProfilePreferencesResponse(
+                game = favoriteGame?.game?.name ?: "No Posee",
+                theme = frequentTheme?.name ?: "No Posee",
+                genre = frequentGenre?.name ?: "No Posee",
+                platform = frequentPlatform?.name ?: "No Posee",
+                collection = frequentCollection ?: "No Posee",
+                developer = frequentDeveloper ?: "No Posee",
+                gameMode = frequentGameMode ?: "No Posee"
+            )
+        )
     }
-    override fun insertMainAdmin(): UserResponse {
+    override fun insertMainAdmin(): MinimalUserResponse {
         // Main User Request
         val mainUser = UserRequest(mainUserEmail,"Administrador Principal", passwordEncoder(mainUserPassword))
         // Check if already exists the main user
@@ -578,9 +627,9 @@ class AbstractUserService(
         // Create a new User
         val newUser = userMapper.userRequestToUser(mainUser, role)
         // Return the User as User response
-        return userMapper.userToUserResponse(userRepository.save(newUser))
+        return userMapper.userToMinimalUserResponse(userRepository.save(newUser))
     }
-    override fun insert(userRequest: UserRequest): UserResponse {
+    override fun insert(userRequest: UserRequest): MinimalUserResponse {
         // Find the necessary Role, if not found, throw a new exception
         val role = roleRepository.findByNameIgnoringCase("Jugador").orElseThrow {
             NoSuchElementExists("Jugador", "Rol")
@@ -595,7 +644,7 @@ class AbstractUserService(
         // Create a new User
         val newUser = userMapper.userRequestToUser(userRequest, role)
         // Return the User as User response
-        return userMapper.userToUserResponse(userRepository.save(newUser))
+        return userMapper.userToMinimalUserResponse(userRepository.save(newUser))
     }
     // Encode Passwords
     private fun passwordEncoder(password: String): String {
