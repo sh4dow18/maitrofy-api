@@ -91,15 +91,6 @@ data class RoleResponse(
     var description: String,
     var privilegesList: List<PrivilegeResponse>
 )
-data class UserResponse(
-    var id: Long,
-    var email: String?,
-    var name: String?,
-    var createdDate: String,
-    var enabled: Boolean,
-    var image: Boolean,
-    var role: String,
-)
 data class AchievementResponse(
     var id: Long,
     var name: String,
@@ -116,6 +107,11 @@ data class GameLogResponse(
     var platform: String?,
     var achievement: AchievementResponse?
 )
+data class UserResponse(
+    val account: ProfileAccountResponse,
+    val statistics: ProfileStatisticsResponse,
+    val preferences: ProfilePreferencesResponse
+)
 
 // Minimal Responses
 
@@ -131,6 +127,43 @@ data class MinimalGameLogResponse(
     var game: MinimalGameResponse,
     var platform: String?,
     var achievement: AchievementResponse?
+)
+data class MinimalUserResponse(
+    var id: Long,
+    var email: String?,
+    var name: String?,
+    var createdDate: String,
+    var enabled: Boolean,
+    var image: Boolean,
+    var role: String,
+)
+
+// Special Responses
+
+// Profile Responses
+
+data class ProfileAccountResponse(
+    var id: Long,
+    var name: String?,
+    var date: String,
+)
+data class ProfileAchievementsResponse(
+    var achievement: AchievementResponse,
+    var amount: Int
+)
+data class ProfileStatisticsResponse(
+    var gameLogsCount: Int,
+    var achievementsList: List<ProfileAchievementsResponse>,
+    var points: Int
+)
+data class ProfilePreferencesResponse(
+    var game: String,
+    var theme: String,
+    var genre: String,
+    var platform: String,
+    var collection: String,
+    var developer: String,
+    var gameMode: String
 )
 
 // IGDB API Responses

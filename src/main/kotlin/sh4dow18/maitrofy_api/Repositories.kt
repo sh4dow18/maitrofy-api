@@ -9,16 +9,47 @@ import java.util.Optional
 @Repository
 interface ThemeRepository: JpaRepository<Theme, Long> {
     fun findAllByOrderByNameAsc(): List<Theme>
+    @Query(value = """
+        SELECT t.* FROM themes t
+        JOIN game_theme gt ON t.id = gt.theme_id
+        JOIN games g ON gt.game_id = g.slug
+        JOIN game_logs gl ON g.slug = gl.game_id
+        WHERE gl.user_id = :userId
+        GROUP BY t.id
+        ORDER BY COUNT(t.id) DESC
+        LIMIT 1
+    """, nativeQuery = true)
+    fun findMostFrequentThemeByUserId(userId: Long): Optional<Theme>
 }
 // Genre Repository
 @Repository
 interface GenreRepository: JpaRepository<Genre, Long> {
     fun findAllByOrderByNameAsc(): List<Genre>
+    @Query(value = """
+        SELECT ge.* FROM genres ge
+        JOIN game_genre gg ON ge.id = gg.genre_id
+        JOIN games g ON gg.game_id = g.slug
+        JOIN game_logs gl ON g.slug = gl.game_id
+        WHERE gl.user_id = :userId
+        GROUP BY ge.id
+        ORDER BY COUNT(ge.id) DESC
+        LIMIT 1
+    """, nativeQuery = true)
+    fun findMostFrequentGenreByUserId(userId: Long): Optional<Genre>
 }
 // Platform Repository
 @Repository
 interface PlatformRepository: JpaRepository<Platform, Long> {
     fun findAllByOrderByNameAsc(): List<Platform>
+    @Query(value = """
+        SELECT p.* FROM platforms p
+        JOIN game_logs g ON g.platform_id = p.id
+        WHERE g.user_id = :userId
+        GROUP BY p.id
+        ORDER BY COUNT(p.id) DESC
+        LIMIT 1
+    """, nativeQuery = true)
+    fun findMostFrequentPlatformByUserId(userId: Long): Optional<Platform>
 }
 // Game Repository
 @Repository
@@ -87,4 +118,39 @@ interface AchievementRepository: JpaRepository<Achievement, Long> {
 @Repository
 interface GameLogRepository: JpaRepository<GameLog, String> {
     fun findByUserIdOrderByDateDesc(userId: Long): List<GameLog>
+    fun findByUserIdAndAchievementId(userId: Long, achievementId: Long): List<GameLog>
+    fun findTopByUserIdAndRatingIsNotNullOrderByRatingDesc(userId: Long): Optional<GameLog>
+    @Query(value = """
+        SELECT g.collection
+        FROM game_logs gl
+        JOIN games g ON gl.game_id = g.slug
+        WHERE gl.user_id = :userId
+          AND g.collection IS NOT NULL
+        GROUP BY g.collection
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    """, nativeQuery = true)
+    fun findMostFrequentCollectionByUserId(userId: Long): Optional<String>
+    @Query(value = """
+        SELECT g.developer
+        FROM game_logs gl
+        JOIN games g ON gl.game_id = g.slug
+        WHERE gl.user_id = :userId
+        AND g.developer IS NOT NULL
+        GROUP BY g.developer
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    """, nativeQuery = true)
+    fun findMostFrequentDeveloperByUserId(userId: Long): Optional<String>
+    @Query(value = """
+        SELECT g.game_mode
+        FROM game_logs gl
+        JOIN games g ON gl.game_id = g.slug
+        WHERE gl.user_id = :userId
+        AND g.game_mode IS NOT NULL
+        GROUP BY g.game_mode
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    """, nativeQuery = true)
+    fun findMostFrequentGameModeByUserId(userId: Long): Optional<String>
 }
