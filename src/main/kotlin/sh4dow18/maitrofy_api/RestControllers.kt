@@ -115,9 +115,10 @@ class RoleRestController(private val roleService: RoleService) {
 @RestController
 @RequestMapping("\${endpoint.users}")
 class UserRestController(private val userService: UserService) {
-    @GetMapping("{id}")
+    @PreAuthorize("hasAuthority('ver-mi-perfil')")
+    @GetMapping("profile")
     @ResponseBody
-    fun findById(@PathVariable("id") id: Long) = userService.findById(id)
+    fun findProfileWithUser() = userService.findProfileWithUser()
     @PreAuthorize("hasAuthority('insertar-administrador-principal')")
     @PostMapping("main")
     @ResponseBody
