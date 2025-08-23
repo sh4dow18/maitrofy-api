@@ -1,5 +1,6 @@
 package sh4dow18.maitrofy_api
 // Rest Controllers Requirements
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -14,6 +15,16 @@ import org.springframework.web.bind.annotation.RestController
 * Important Tags
 * - PreAuthorize tag is used to check if the request has a JWT
 * */
+// Utils Rest Controller
+@RestController
+@RequestMapping("\${endpoint.utils}")
+class UtilsRestController {
+    @GetMapping("health")
+    @ResponseBody
+    fun health(): ResponseEntity<Void> {
+        return ResponseEntity.ok().build()
+    }
+}
 // Theme Rest Controller
 @Suppress("unused")
 @RestController
