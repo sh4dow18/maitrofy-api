@@ -256,13 +256,17 @@ class AbstractGameService(
         if (game.collection != null) {
             recommendationsList.addAll(gameRepository.findByCollectionIgnoreCaseAndSlugNot(game.collection!!, game.slug))
         }
+        // If developer is not empty, add the games with the same developer
+        if (game.developer.isNotEmpty()) {
+            recommendationsList.addAll(gameRepository.findByDeveloperIgnoreCaseAndSlugNot(game.developer, game.slug).take(15))
+        }
         // If the game has themes, add the games with the same first theme
         if (game.genresList.isNotEmpty()) {
-            recommendationsList.addAll(gameRepository.findByTheme(game.genresList.toList()[0].id, game.slug).take(15))
+            recommendationsList.addAll(gameRepository.findByGenre(game.genresList.toList()[0].id, game.slug).take(15))
         }
         // If the game has genres, add the games with the same first genre
         if (game.themesList.isNotEmpty()) {
-            recommendationsList.addAll(gameRepository.findByGenre(game.themesList.toList()[0].id, game.slug).take(15))
+            recommendationsList.addAll(gameRepository.findByTheme(game.themesList.toList()[0].id, game.slug).take(15))
         }
         // Remove duplicate games in recommendations list
         val distinctRecommendations = recommendationsList.distinctBy { it.slug }
