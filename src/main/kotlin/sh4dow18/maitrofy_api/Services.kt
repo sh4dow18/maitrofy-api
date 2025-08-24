@@ -256,13 +256,17 @@ class AbstractGameService(
         if (game.collection != null) {
             recommendationsList.addAll(gameRepository.findByCollectionIgnoreCaseAndSlugNot(game.collection!!, game.slug))
         }
+        // If developer is not empty, add the games with the same developer
+        if (game.developer.isNotEmpty()) {
+            recommendationsList.addAll(gameRepository.findByDeveloperIgnoreCaseAndSlugNot(game.developer, game.slug).take(15))
+        }
         // If the game has themes, add the games with the same first theme
         if (game.genresList.isNotEmpty()) {
-            recommendationsList.addAll(gameRepository.findByTheme(game.genresList.toList()[0].id, game.slug).take(15))
+            recommendationsList.addAll(gameRepository.findByGenre(game.genresList.toList()[0].id, game.slug).take(15))
         }
         // If the game has genres, add the games with the same first genre
         if (game.themesList.isNotEmpty()) {
-            recommendationsList.addAll(gameRepository.findByGenre(game.themesList.toList()[0].id, game.slug).take(15))
+            recommendationsList.addAll(gameRepository.findByTheme(game.themesList.toList()[0].id, game.slug).take(15))
         }
         // Remove duplicate games in recommendations list
         val distinctRecommendations = recommendationsList.distinctBy { it.slug }
@@ -457,6 +461,7 @@ class AbstractPrivilegeService(
             PrivilegeRequest("Ver mi Registro de Juego Especifico", "Permite ver la información completa de un registro específico que tiene mi id de usuario"),
             PrivilegeRequest("Insertar Registro de Juego para Mi", "Permite insertar registros de juego con mi id de usuario"),
             PrivilegeRequest("Actualizar Registro de Juego para Mi", "Permite actualizar registros de juego con mi id de usuario"),
+            PrivilegeRequest("Ver mi Perfil", "Permite obtener el perfil del mi usuario"),
         )
         // Create a new privileges list with privileges request
         val privilegesList = privilegeRequestList.map {
@@ -496,9 +501,9 @@ class AbstractRoleService(
     override fun insertAllNeeded(): List<RoleResponse> {
         // Needed Roles Request List
         val roleRequestsList = listOf(
-            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi")),
-            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi")),
-            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego", "ver-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi"))
+            RoleRequest("Administrador Principal", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi", "ver-mi-perfil")),
+            RoleRequest("Administrador", "Rol que pertenece a los administradores del sistema", listOf("insertar-generos", "insertar-juego", "insertar-plataformas", "insertar-privilegios", "insertar-temas", "insertar-top-juegos", "ver-privilegios", "ver-roles", "insertar-roles", "insertar-administrador-principal", "ver-logros", "insertar-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi", "ver-mi-perfil")),
+            RoleRequest("Jugador", "Rol que pertenece a los jugadores que usan el sistema para tener su registro de juego", listOf("insertar-juego", "ver-logros", "ver-mis-registros-de-juego", "ver-mi-registro-de-juego-especifico", "insertar-registro-de-juego-para-mi", "actualizar-registro-de-juego-para-mi", "ver-mi-perfil"))
         )
         // Create a new Roles list with Role requests
         val rolesList = roleRequestsList.map {
@@ -536,7 +541,7 @@ class AbstractRoleService(
 // User Service Interface where the functions to be used in
 // Spring Abstract User Service are declared
 interface UserService {
-    fun findById(id: Long): UserResponse
+    fun findProfileWithUser(): UserResponse
     fun insertMainAdmin(): MinimalUserResponse
     fun insert(userRequest: UserRequest): MinimalUserResponse
 }
@@ -568,10 +573,11 @@ class AbstractUserService(
     @Value("\${main.user.password}")
     private val mainUserPassword: String,
 ): UserService {
-    override fun findById(id: Long): UserResponse {
+    override fun findProfileWithUser(): UserResponse {
+        val userId = LoggedUser.get()
         // Check if the user already exists, if not, throw a new error
-        val user = userRepository.findById(id).orElseThrow {
-            NoSuchElementExists("$id", "Usuario")
+        val user = userRepository.findById(userId).orElseThrow {
+            NoSuchElementExists("$userId", "Usuario")
         }
         // Transform user Created Date from ZonedDateTime to String
         val date = user.createdDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy").withZone(ZoneId.systemDefault()))
@@ -602,7 +608,7 @@ class AbstractUserService(
             account = ProfileAccountResponse(user.id, user.name, date),
             statistics = ProfileStatisticsResponse(user.gameLogsList.size, achievementsList, points),
             preferences = ProfilePreferencesResponse(
-                game = favoriteGame?.game?.name ?: "No Posee",
+                game = if (favoriteGame != null) ProfileFavoriteGameResponse(favoriteGame.game.name, favoriteGame.game.cover, favoriteGame.game.background) else null ,
                 theme = frequentTheme?.name ?: "No Posee",
                 genre = frequentGenre?.name ?: "No Posee",
                 platform = frequentPlatform?.name ?: "No Posee",

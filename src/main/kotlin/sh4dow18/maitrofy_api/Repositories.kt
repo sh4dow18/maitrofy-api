@@ -86,10 +86,11 @@ interface GameRepository: JpaRepository<Game, String> {
         @Param("platformId") platformId: Long?
     ): List<Game>
     fun findByCollectionIgnoreCaseAndSlugNot(collection: String, slug: String): List<Game>
-    @Query("SELECT g FROM Game g JOIN g.themesList t WHERE t.id = :themeId AND g.slug <> :excludeSlug")
+    @Query("SELECT g FROM Game g JOIN g.themesList t WHERE t.id = :themeId AND g.id <> :excludeSlug")
     fun findByTheme(@Param("themeId") themeId: Long, @Param("excludeSlug") excludeSlug: String): List<Game>
-    @Query("SELECT g FROM Game g JOIN g.genresList ge WHERE ge.id = :genreId AND g.slug <> :excludeSlug")
+    @Query("SELECT g FROM Game g JOIN g.genresList ge WHERE ge.id = :genreId AND g.id <> :excludeSlug")
     fun findByGenre(@Param("genreId") genreId: Long, @Param("excludeSlug") excludeSlug: String): List<Game>
+    fun findByDeveloperIgnoreCaseAndSlugNot(developer: String, excludeSlug: String): List<Game>
 
 }
 // User Repository

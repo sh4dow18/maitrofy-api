@@ -157,13 +157,18 @@ data class ProfileStatisticsResponse(
     var points: Int
 )
 data class ProfilePreferencesResponse(
-    var game: String,
+    var game: ProfileFavoriteGameResponse?,
     var theme: String,
     var genre: String,
     var platform: String,
     var collection: String,
     var developer: String,
     var gameMode: String
+)
+data class ProfileFavoriteGameResponse(
+    var name: String,
+    var cover: String,
+    var background: String
 )
 
 // IGDB API Responses
