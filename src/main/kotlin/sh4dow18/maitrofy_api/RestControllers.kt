@@ -1,5 +1,6 @@
 package sh4dow18.maitrofy_api
 // Rest Controllers Requirements
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -16,8 +17,10 @@ import org.springframework.web.bind.annotation.RestController
 * - PreAuthorize tag is used to check if the request has a JWT
 * */
 // Utils Rest Controller
+@Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.utils}")
+@Tag(name = "Utils")
 class UtilsRestController {
     @GetMapping("health")
     @ResponseBody
@@ -29,6 +32,7 @@ class UtilsRestController {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.themes}")
+@Tag(name = "Themes")
 class ThemeRestController(private val themeService: ThemeService) {
     @GetMapping
     @ResponseBody
@@ -42,6 +46,7 @@ class ThemeRestController(private val themeService: ThemeService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.genres}")
+@Tag(name = "Genres")
 class GenreRestController(private val genreService: GenreService) {
     @GetMapping
     @ResponseBody
@@ -55,6 +60,7 @@ class GenreRestController(private val genreService: GenreService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.platforms}")
+@Tag(name = "Platforms")
 class PlatformRestController(private val platformService: PlatformService) {
     @GetMapping
     @ResponseBody
@@ -68,6 +74,7 @@ class PlatformRestController(private val platformService: PlatformService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.games}")
+@Tag(name = "Games")
 class GameRestController(private val gameService: GameService) {
     @GetMapping
     @ResponseBody
@@ -97,6 +104,7 @@ class GameRestController(private val gameService: GameService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.privileges}")
+@Tag(name = "Privileges")
 class PrivilegeRestController(private val privilegeService: PrivilegeService) {
     @PreAuthorize("hasAuthority('ver-privilegios')")
     @GetMapping
@@ -111,6 +119,7 @@ class PrivilegeRestController(private val privilegeService: PrivilegeService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.roles}")
+@Tag(name = "Roles")
 class RoleRestController(private val roleService: RoleService) {
     @PreAuthorize("hasAuthority('ver-roles')")
     @GetMapping
@@ -125,6 +134,7 @@ class RoleRestController(private val roleService: RoleService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.users}")
+@Tag(name = "Users")
 class UserRestController(private val userService: UserService) {
     @PreAuthorize("hasAuthority('ver-mi-perfil')")
     @GetMapping("profile")
@@ -142,6 +152,7 @@ class UserRestController(private val userService: UserService) {
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.achievements}")
+@Tag(name = "Achievements")
 class AchievementRestController(private val achievementService: AchievementService) {
     @PreAuthorize("hasAuthority('ver-logros')")
     @GetMapping
@@ -156,6 +167,7 @@ class AchievementRestController(private val achievementService: AchievementServi
 @Suppress("unused")
 @RestController
 @RequestMapping("\${endpoint.gameLogs}")
+@Tag(name = "Game Logs")
 class GameLogRestController(private val gameLogService: GameLogService) {
     @PreAuthorize("hasAuthority('ver-mis-registros-de-juego')")
     @GetMapping("user")
