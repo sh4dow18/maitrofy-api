@@ -27,6 +27,12 @@ class UtilsRestController {
     fun health(): ResponseEntity<Void> {
         return ResponseEntity.ok().build()
     }
+    @GetMapping("auth")
+    @ResponseBody
+    @PreAuthorize("isAuthenticated()")
+    fun auth(): ResponseEntity<Void> {
+        return ResponseEntity.ok().build()
+    }
 }
 // Theme Rest Controller
 @Suppress("unused")

@@ -759,7 +759,7 @@ class AbstractGameLogService(
         val gameLog = user.gameLogsList.find { it.game.slug == gameLogRequest.game }
         // If already exists, throw a new error
         if (gameLog != null) {
-            throw ElementAlreadyExists(gameLogRequest.game, "Registro de Juego del Usuario con el Id $userId")
+            throw ElementAlreadyExists(gameLog.game.name, "Registro de Juego del Usuario '${user.name}'")
         }
         // If not exists, find the game, if not exists, throw an error
         val game = gameRepository.findById(gameLogRequest.game).orElseThrow {

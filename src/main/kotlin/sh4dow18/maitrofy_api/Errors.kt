@@ -14,7 +14,7 @@ data class ApiError(
 )
 // "Element already exists" class based on "Runtime Exception" class for use in error handlers with a template message
 class ElementAlreadyExists(element: String, existsAs: String) :
-    RuntimeException("El Elemento $element ya existe como $existsAs")
+    RuntimeException("El Elemento '$element' ya existe como $existsAs")
 // "No Such Element Exists" class based on "Runtime Exception" class for use in error handlers with a template message
 class NoSuchElementExists(element: String, notExistsAs: String) :
     RuntimeException("El Elemento con el id $element no existe como $notExistsAs")
