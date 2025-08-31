@@ -143,6 +143,7 @@ class AbstractGenreService(
 // Spring Abstract Platform Service are declared
 interface PlatformService {
     fun findAll(): List<PlatformResponse>
+    fun findAllGamePlatforms(slug: String): List<PlatformResponse>
     fun insertAllFromIGDB(): List<PlatformResponse>
 }
 // Spring Abstract Platform Service
@@ -155,6 +156,8 @@ class AbstractPlatformService(
     @Autowired
     val platformMapper: PlatformMapper,
     @Autowired
+    val gameRepository: GameRepository,
+    @Autowired
     val igdbService: IGDBService,
     @Autowired
     val translateService: TranslateService
@@ -162,6 +165,13 @@ class AbstractPlatformService(
     // Find all Platform and returns them as Platform Responses
     override fun findAll(): List<PlatformResponse> {
         return platformMapper.platformsListToPlatformResponsesList(platformRepository.findAllByOrderByNameAsc())
+    }
+    // Find all Game Platforms
+    override fun findAllGamePlatforms(slug: String): List<PlatformResponse> {
+        val game = gameRepository.findById(slug).orElseThrow {
+            NoSuchElementExists(slug, "Juego")
+        }
+        return platformMapper.platformsListToPlatformResponsesList(game.platformsList.toList())
     }
     // Insert all Platform from IGDB APi into database
     override fun insertAllFromIGDB(): List<PlatformResponse> {
@@ -799,6 +809,10 @@ class AbstractGameLogService(
             achievement = achievementRepository.findById(gameLogUpdateRequest.achievement!!).orElseThrow {
                 NoSuchElementExists("${gameLogUpdateRequest.achievement}", "Logro")
             }
+            // If Achievement sent is platinum, but is not a PlayStation Platform, throw an error
+            if (achievement != null && achievement.name == "Platino" && (platform == null || !platform.name.contains("PlayStation"))) {
+                throw BadRequest("Se ha enviado el Logro 'Platino' y la plataforma no es un 'PlayStation'")
+            }
         }
         // Check if timestamp date was sent. if is, transform the timestamp into ZonedDateTime and update it
         if (gameLogUpdateRequest.date != null) {
@@ -811,11 +825,11 @@ class AbstractGameLogService(
             gameLog.date = newDate
         }
         // Update the game log information
-        gameLog.rating = gameLogUpdateRequest.rating
-        gameLog.review = review
-        gameLog.hoursSpend = gameLogUpdateRequest.hoursSpend
-        gameLog.platform = platform
-        gameLog.achievement = achievement
+        gameLog.rating = if (gameLogUpdateRequest.rating == null && !gameLogUpdateRequest.updateAll) gameLog.rating else gameLogUpdateRequest.rating
+        gameLog.review = if (review == null && !gameLogUpdateRequest.updateAll) gameLog.review else review
+        gameLog.hoursSpend = if (gameLogUpdateRequest.hoursSpend == null && !gameLogUpdateRequest.updateAll) gameLog.hoursSpend else gameLogUpdateRequest.hoursSpend
+        gameLog.platform = if (gameLogUpdateRequest.platform == null && !gameLogUpdateRequest.updateAll) gameLog.platform else platform
+        gameLog.achievement = if (gameLogUpdateRequest.achievement == null && !gameLogUpdateRequest.updateAll) gameLog.achievement else achievement
         // Returns the New Game Log as Game Log Response
         return gameLogMapper.gameLogToGameLogResponse(gameLogRepository.save(gameLog))
     }

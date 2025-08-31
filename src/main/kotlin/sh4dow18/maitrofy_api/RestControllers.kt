@@ -71,6 +71,9 @@ class PlatformRestController(private val platformService: PlatformService) {
     @GetMapping
     @ResponseBody
     fun findAll() = platformService.findAll()
+    @GetMapping("game/{slug}")
+    @ResponseBody
+    fun findAllGamePlatforms(@PathVariable("slug") slug: String) = platformService.findAllGamePlatforms(slug)
     @PreAuthorize("hasAuthority('insertar-plataformas')")
     @PostMapping("all")
     @ResponseBody

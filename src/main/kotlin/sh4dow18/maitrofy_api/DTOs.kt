@@ -35,7 +35,8 @@ data class GameLogUpdateRequest(
     var review: String?,
     var hoursSpend: Int?,
     var platform: Long?,
-    var achievement: Long?
+    var achievement: Long?,
+    var updateAll: Boolean
 )
 
 // Special Request
