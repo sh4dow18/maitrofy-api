@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -816,13 +818,16 @@ class AbstractGameLogService(
         }
         // Check if timestamp date was sent. if is, transform the timestamp into ZonedDateTime and update it
         if (gameLogUpdateRequest.date != null) {
-            val newDate = Instant.ofEpochMilli(gameLogUpdateRequest.date!!).atZone(ZoneId.systemDefault())
+            // Transform Local Epoch Time Stamp to a UTC Date Time
+            val localDateTime = LocalDateTime.ofEpochSecond(gameLogUpdateRequest.date!! / 1000, 0, ZoneOffset.UTC)
+            val zonedLocal = localDateTime.atZone(ZoneId.systemDefault())
+            val utcDateTime = zonedLocal.withZoneSameInstant(ZoneOffset.UTC)
             // Check if date sent is valid, if not, throw an error
-            if (newDate > ZonedDateTime.now()) {
+            if (utcDateTime.withZoneSameInstant(ZoneId.systemDefault()) > ZonedDateTime.now()) {
                 throw BadRequest("Se envió una fecha futura que no se acepta")
             }
             // Set new date
-            gameLog.date = newDate
+            gameLog.date = utcDateTime
         }
         // Update the game log information
         gameLog.rating = if (gameLogUpdateRequest.rating == null && !gameLogUpdateRequest.updateAll) gameLog.rating else gameLogUpdateRequest.rating
