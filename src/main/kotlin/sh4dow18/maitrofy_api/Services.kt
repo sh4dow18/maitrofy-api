@@ -14,7 +14,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
-import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -947,6 +946,10 @@ class AbstractIGDBService(
             // Lock thread until information is obtained
             // If error or null, set as Empty list
             .block() ?: emptyList()
+        // Check if an empty response
+        if (response.isEmpty()) {
+            throw NoSuchElementExists(slug, "Juego en IGDB")
+        }
         // Return Response as IGDB Game
         return response[0].toIgdbGame()
     }
